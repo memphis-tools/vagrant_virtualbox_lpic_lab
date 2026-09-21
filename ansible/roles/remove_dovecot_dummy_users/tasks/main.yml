@@ -1,0 +1,9 @@
+---
+- block:
+  - name: remove dummy users
+    ansible.builtin.user:
+      name: '{{ item }}'
+      state: absent
+    loop: ['shijuro']
+    changed_when: false
+  tags: remove

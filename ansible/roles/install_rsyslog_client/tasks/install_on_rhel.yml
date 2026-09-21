@@ -1,0 +1,22 @@
+---
+- name: Install postfix
+  ansible.builtin.dnf:
+    name: postfix
+    state: present
+  changed_when: false
+
+- name: Ensure postfix is started
+  ansible.builtin.service:
+    name: postfix
+    state: started
+
+- name: Template main.cf
+  ansible.builtin.templates:
+    src: 'main.cf.j2'
+    dest: '/etc/postfix/main.cf'
+    mode: '0644'
+
+- name: Ensure postfix is restarted
+  ansible.builtin.service:
+    name: postfix
+    state: restarted

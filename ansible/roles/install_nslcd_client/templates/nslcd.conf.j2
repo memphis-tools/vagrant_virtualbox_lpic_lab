@@ -1,0 +1,17 @@
+uid nslcd
+gid nslcd
+uri ldaps://openldap.vagrant-dummy-ops.lab:636
+base ou=it,dc=vagrant-dummy-ops,dc=lab
+ssl on
+tls_reqcert allow
+tls_cacertfile /usr/local/share/ca-certificates/vagrant_ca.crt
+tls_cert /etc/ssl/localcerts/vagrant_nslcd-client.crt
+tls_key /etc/ssl/localcerts/vagrant_nslcd-client.key
+sasl_mech EXTERNAL
+sasl_authcid nslcd-client.vagrant-dummy-ops.lab
+sasl_realm VAGRANT-DUMMY-OPS.LAB
+{% if ansible_hostname in ["dns1","dns2","vsftp","nas","openldap","squid","openvpn"] %}
+pam_authz_search (&(objectClass=posixGroup)(cn=sysadmin)(memberUid=$username))
+{% elif ansible_hostname in ["apache", "nginx"] %}
+pam_authz_search (&(objectClass=posixGroup)(|(cn=sysadmin)(cn=developer))(memberUid=$username))
+{% endif %}

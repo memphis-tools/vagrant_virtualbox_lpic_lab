@@ -1,0 +1,93 @@
+---
+- name: Gather package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Install sssd
+  ansible.builtin.apt:
+    name: sssd
+    state: present
+
+- block:
+  - name: Uninstall nslcd if installed
+    ansible.builtin.apt:
+      name: nslcd
+      state: absent
+      purge: yes
+
+  - name: Stop nscd
+    ansible.builtin.service:
+      name: nscd
+      state: stopped
+
+  - name: Disable nscd
+    ansible.builtin.service:
+      name: nscd
+      enabled: no
+  when: '"nslcd" in ansible_facts.packages'
+
+- name: Template sssd configuration
+  ansible.builtin.template:
+    src: 'sssd.conf.j2'
+    dest: '/etc/sssd/sssd.conf'
+    owner: 'root'
+    group: 'root'
+    mode: '0600'
+  no_log: yes
+
+- name: Template sshd configuration
+  ansible.builtin.template:
+    src: 'sshd_config.j2'
+    dest: '/etc/ssh/sshd_config'
+    owner: 'root'
+    group: 'root'
+    mode: '0600'
+  no_log: yes
+
+- name: Copy nsswitch configuration
+  ansible.builtin.copy:
+    src: 'files/nsswitch.conf'
+    dest: '/etc/nsswitch.conf'
+    mode: '0644'
+
+- name: Enable automatic home directory creation via pam_mkhomedir
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/common-session
+    line: 'session required pam_mkhomedir.so skel=/etc/skel/ umask=0077'
+    state: present
+
+- name: Ensure the kerberos_keytabs folder exists
+  ansible.builtin.file:
+    path: '/mnt/kerberos_keytabs/'
+    state: directory
+    mode: 0750
+
+- name: Mount kerberos dedicated NFS volume
+  ansible.posix.mount:
+    src: localhost:/mnt/kerberos
+    path: /mnt/kerberos_keytabs/
+    opts: rw,sync,hard
+    state: mounted
+    fstype: nfs
+
+- name: 'Get the keytab for {{ ansible_hostname }}'
+  ansible.builtin.copy:
+    src: '/mnt/kerberos_keytabs/{{ ansible_hostname }}.keytab'
+    dest: /etc/krb5.keytab
+    mode: 0640
+    remote_src: yes
+
+- name: Unmount kerberos dedicated NFS volume
+  ansible.posix.mount:
+    path: /mnt/kerberos_keytabs/
+    state: unmounted
+
+- name: Restart sssd
+  ansible.builtin.service:
+    name: sssd
+    state: restarted
+
+- name: Restart sshd
+  ansible.builtin.service:
+    name: sshd
+    state: restarted

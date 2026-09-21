@@ -1,0 +1,9 @@
+---
+- hosts: all
+  become: yes
+  gather_subset: min
+  roles:
+    - name: uninstall_postfix
+      tags: uninstall
+    - name: install_postfix
+      tags: install

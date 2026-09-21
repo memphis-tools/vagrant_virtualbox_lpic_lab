@@ -1,0 +1,240 @@
+[SQUID POC]
+-----------
+TODO: https_connect on port 3129 (instead of stunnel)
+
+NB: update squid.conf, run '-k parse', reload systemd squid service.
+
+# On any hosts (but squid and openvpn)
+1] We see the auto-generated certificate. If client uses apt, squid will not perform SSL-Bump (we illustrate using curl).
+
+$ curl -v -x http://squid.vagrant-dummy-ops.lab:3128 --proxy-user 'squid:chocol@tepie94' --proxy-basic https://dummy-ops.dev/ -o /dev/null
+***
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN: server did not agree on a protocol. Uses default.
+* Server certificate:
+*  subject: CN=dummy-ops.dev
+*  start date: Aug 27 17:07:49 2026 GMT
+*  expire date: Nov 25 18:07:45 2026 GMT
+*  subjectAltName: host "dummy-ops.dev" matched cert's "dummy-ops.dev"
+*  issuer: C=FR; L=PARIS; ST=IDF; O=DUMMY_OPS_TEAM; OU=DUMMY_DEV_TEAM; CN=squid-mitm-ca.vagrant-dummy-ops.lab; emailAddress=shijuro@dovecot.vagrant-dummy-ops.lab
+*  SSL certificate verify ok.
+* using HTTP/1.x
+***
+
+$ curl -v -x http://squid.vagrant-dummy-ops.lab:3128 --proxy-user 'squid:chocol@tepie94' --proxy-basic https://deb.debian.org/ -o /dev/null
+***
+* SSL connection using TLSv1.3 / TLS_AES_128_GCM_SHA256
+* ALPN: server accepted h2
+* Server certificate:
+*  subject: CN=cdn-fastly.deb.debian.org
+*  start date: Aug  9 01:03:17 2026 GMT
+*  expire date: Nov  7 01:03:16 2026 GMT
+*  subjectAltName: host "deb.debian.org" matched cert's "deb.debian.org"
+*  issuer: C=US; O=Let's Encrypt; CN=YR2
+*  SSL certificate verify ok.
+} [5 bytes data]
+* using HTTP/2
+***
+
+
+$ curl -v -x https://squid.vagrant-dummy-ops.lab --proxy-user 'squid:chocol@tepie94' --proxy-basic https://dummy-ops.dev/ -o /dev/null
+***
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN: server did not agree on a protocol. Uses default.
+* Proxy certificate:
+*  subject: C=FR; L=PARIS; ST=IDF; O=DUMMY_OPS_TEAM; OU=DUMMY_DEV_TEAM; CN=squid.vagrant-dummy-ops.lab; emailAddress=shijuro@dovecot.vagrant-dummy-ops.lab
+*  start date: May  3 17:33:56 2026 GMT
+*  expire date: Apr 30 17:33:56 2036 GMT
+*  common name: squid.vagrant-dummy-ops.lab (matched)
+*  issuer: C=FR; L=PARIS; ST=IDF; O=DUMMY_OPS_TEAM; OU=DUMMY_DEV_TEAM; CN=ca.vagrant-dummy-ops.lab; emailAddress=shijuro@dovecot.vagrant-dummy-ops.lab
+*  SSL certificate verify ok.
+* allocate connect buffer
+* Establish HTTP proxy tunnel to dummy-ops.dev:443
+* Proxy auth using Basic with user 'squid'
+***
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN: server did not agree on a protocol. Uses default.
+* Server certificate:
+*  subject: CN=dummy-ops.dev
+*  start date: Aug 27 17:07:49 2026 GMT
+*  expire date: Nov 25 18:07:45 2026 GMT
+*  subjectAltName: host "dummy-ops.dev" matched cert's "dummy-ops.dev"
+*  issuer: C=FR; L=PARIS; ST=IDF; O=DUMMY_OPS_TEAM; OU=DUMMY_DEV_TEAM; CN=squid-mitm-ca.vagrant-dummy-ops.lab; emailAddress=shijuro@dovecot.vagrant-dummy-ops.lab
+*  SSL certificate verify ok.
+* using HTTP/1.x
+} [5 bytes data]
+> GET / HTTP/1.1
+> Host: dummy-ops.dev
+> User-Agent: curl/7.88.1
+> Accept: */*
+***
+
+$ curl -v -x https://squid.vagrant-dummy-ops.lab --proxy-user 'squid:chocol@tepie94' --proxy-basic https://deb.debian.org/ -o /dev/null
+***
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN: server did not agree on a protocol. Uses default.
+* Proxy certificate:
+*  subject: C=FR; L=PARIS; ST=IDF; O=DUMMY_OPS_TEAM; OU=DUMMY_DEV_TEAM; CN=squid.vagrant-dummy-ops.lab; emailAddress=shijuro@dovecot.vagrant-dummy-ops.lab
+*  start date: May  3 17:33:56 2026 GMT
+*  expire date: Apr 30 17:33:56 2036 GMT
+*  common name: squid.vagrant-dummy-ops.lab (matched)
+*  issuer: C=FR; L=PARIS; ST=IDF; O=DUMMY_OPS_TEAM; OU=DUMMY_DEV_TEAM; CN=ca.vagrant-dummy-ops.lab; emailAddress=shijuro@dovecot.vagrant-dummy-ops.lab
+*  SSL certificate verify ok.
+* allocate connect buffer
+* Establish HTTP proxy tunnel to deb.debian.org:443
+* Proxy auth using Basic with user 'squid'
+***
+* SSL connection using TLSv1.3 / TLS_AES_128_GCM_SHA256
+* ALPN: server accepted h2
+* Server certificate:
+*  subject: CN=cdn-fastly.deb.debian.org
+*  start date: Aug  9 01:03:17 2026 GMT
+*  expire date: Nov  7 01:03:16 2026 GMT
+*  subjectAltName: host "deb.debian.org" matched cert's "deb.debian.org"
+*  issuer: C=US; O=Let's Encrypt; CN=YR2
+*  SSL certificate verify ok.
+} [5 bytes data]
+***
+
+
+2] From any host (but squid or openvpn). On squid we do a tcpdump which show what http(s) request reach the squid host on port 443. The stunnel redirect to squid on port 3128 which then decrypted the TLS : the protected header is visible in plain text.
+Stunnel will decrypt first TLS layer (then see "dummy-ops.dev, the authentication in plain text, .." but not the header).
+
+$ curl -v -x https://squid.vagrant-dummy-ops.lab --proxy-user 'squid:chocol@tepie94' --proxy-basic -H 'X-Demo-Secret: TLS_BUMP_PROOF_123456' https://dummy-ops.dev/ -o /dev/null
+
+root@squid:~# tcpdump -i eth1 -nn -A 'host 192.168.1.208 and tcp and port 443'
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on eth1, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+12:27:05.361527 IP 192.168.1.208.56130 > 192.168.1.210.443: Flags [S], seq 3951155378, win 64240, options [mss 1460,sackOK,TS val 303921974 ecr 0,nop,wscale 7], length 0
+E..<.V@.@..s.........B.........................
+..{6........
+12:27:05.361638 IP 192.168.1.210.443 > 192.168.1.208.56130: Flags [S.], seq 1114599800, ack 3951155379, win 65160, options [mss 1460,sackOK,TS val 1002743148 ecr 303921974,nop,wscale 6], length 0
+E..<..@.@..............BBoqx.........!.........
+;..l..{6....
+12:27:05.362483 IP 192.168.1.208.56130 > 192.168.1.210.443: Flags [.], ack 1, win 502, options [nop,nop,TS val 303921975 ecr 1002743148], length 0
+E..4.W@.@..z.........B......Boqy....,3.....
+..{7;..l
+12:27:05.382585 IP 192.168.1.208.56130 > 192.168.1.210.443: Flags [P.], seq 1:518, ack 1, win 502, options [nop,nop,TS val 303921996 ecr 1002743148], length 517
+E..9.X@.@..t.........B......Boqy....4......
+..{L;..l...........&.......|7.Ud.5r6!...o.2M..v.... 7.......jL'D........I..&..`Oje.p.>.......,.0.........+./...$.(.k.#.'.g.
+...9.	...3.....=.<.5./.....u... .....squid.vagrant-dummy-ops.lab.........
+***
+
+
+root@squid:~# tail -f /var/log/squid/cache.log
+***
+2026/09/12 12:27:05.500 kid1| 33,2| client_side.cc(519) setAuth: Adding connection-auth to conn331 local=127.0.0.1:3128 remote=127.0.0.1:42512 FD 10 flags=1 from SSL-bumped CONNECT
+2026/09/12 12:27:40.581 kid1| 11,2| client_side.cc(1357) parseHttpRequest: HTTP Client conn331 local=127.0.0.1:3128 remote=127.0.0.1:42512 FD 10 flags=1
+2026/09/12 12:27:40.581 kid1| 11,2| client_side.cc(1358) parseHttpRequest: HTTP Client REQUEST:
+---------
+GET / HTTP/1.1
+Host: dummy-ops.dev
+User-Agent: curl/7.88.1
+Accept: */*
+X-Demo-Secret: TLS_BUMP_PROOF_123456
+
+
+3] See apt at work
+$ sudo apt-get -o Acquire::https::Proxy="https://squid:chocol%40tepie94@squid.vagrant-dummy-ops.lab/" update
+Get:1 https://security.debian.org/debian-security bookworm-security InRelease [34.8 kB]
+Hit:2 https://deb.debian.org/debian bookworm InRelease
+Hit:3 https://deb.debian.org/debian bookworm-updates InRelease
+Hit:4 https://deb.debian.org/debian bookworm-backports InRelease
+Fetched 34.8 kB in 1s (31.3 kB/s)
+Reading package lists... Done
+
+
+4] /etc/environment usage
+$ cat /etc/environment
+http_proxy=http://squid:chocol%40tepie94@squid.vagrant-dummy-ops.lab:3128
+https_proxy=https://squid:chocol%40tepie94@squid.vagrant-dummy-ops.lab:443
+HTTP_PROXY=http://squid:chocol%40tepie94@squid.vagrant-dummy-ops.lab:3128
+HTTPS_PROXY=https://squid:chocol%40tepie94@squid.vagrant-dummy-ops.lab:443
+no_proxy=localhost,127.0.0.1,192.168.1.0/24
+NO_PROXY=localhost,127.0.0.1,192.168.1.0/24
+
+$ curl -v -H 'X-Demo-Secret: TLS_BUMP_PROOF_123456' https://dummy-ops.dev/ -o /dev/null
+* Uses proxy env variable no_proxy == 'localhost,127.0.0.1,192.168.1.0/24'
+* Uses proxy env variable https_proxy == 'https://squid:chocol%40tepie94@squid.vagrant-dummy-ops.lab:443'
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying 192.168.1.210:443...
+* Connected to squid.vagrant-dummy-ops.lab (192.168.1.210) port 443 (#0)
+***
+
+
+5] Debug squid with various checks
+root@squid:~# ip -br -4 a
+lo               UNKNOWN        127.0.0.1/8
+eth0             DOWN           10.0.2.15/24
+eth1             UP             192.168.1.210/24
+tun0             UNKNOWN        192.168.2.2/24
+
+root@squid:~# resolvconf -l
+# resolv.conf from lo.unbound
+nameserver 127.0.0.1
+
+# resolv.conf from tun0.openvpn
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+
+# resolv.conf from eth0
+# resolv.conf for eth0
+domain home
+nameserver 10.0.2.3
+
+root@squid:~# ip link show
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: eth0: <BROADCAST,MULTICAST> mtu 1500 qdisc fq_codel state DOWN mode DEFAULT group default qlen 1000
+    link/ether 08:00:27:8d:c0:4d brd ff:ff:ff:ff:ff:ff
+    altname enp0s3
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode DEFAULT group default qlen 1000
+    link/ether 08:00:27:44:32:c8 brd ff:ff:ff:ff:ff:ff
+    altname enp0s8
+4: tun0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UNKNOWN mode DEFAULT group default qlen 500
+    link/none
+
+root@squid:~# ip route
+default via 192.168.2.2 dev tun0
+192.168.1.0/24 dev eth1 proto kernel scope link src 192.168.1.210
+192.168.2.0/24 dev tun0 proto kernel scope link src 192.168.2.2
+
+root@squid:~# cat /etc/openvpn/client.conf
+client
+dev tun
+proto udp
+remote openvpn.vagrant-dummy-ops.lab 1194
+cipher AES-256-GCM
+data-ciphers AES-256-GCM:AES-128-GCM:CHACHA20-POLY1305
+auth SHA256
+#remote-cert-tls server
+tls-client
+ca /usr/local/share/ca-certificates/vagrant_ca.crt
+cert /etc/ssl/localcerts/vagrant_openvpn-client.crt
+key /etc/ssl/localcerts/vagrant_openvpn-client.key
+verb 3
+
+# apt install openresolv
+# This will replace /etc/resolv.conf with the DNS server pushed by the OpenVPN server (10.0.2.3).
+script-security 2
+up /etc/openvpn/update-resolv-conf
+down /etc/openvpn/update-resolv-conf
+
+#route 10.0.2.0 255.255.255.0
+root@squid:~#
+root@squid:~# ping -c 3 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=61 time=157 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=61 time=264 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=61 time=21.1 ms
+
+--- 8.8.8.8 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2006ms
+rtt min/avg/max/mdev = 21.118/147.616/264.479/99.585 ms
+root@squid:~# cat /etc/resolv.conf
+# Generated by resolvconf
+domain home
+nameserver 127.0.0.1
+root@squid:~#
+root@squid:~# squid -k parse

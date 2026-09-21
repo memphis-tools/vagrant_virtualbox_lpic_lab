@@ -1,0 +1,8 @@
+---
+- hosts: [active]
+  gather_facts: no
+  tasks:
+    - name: Umount /vagrant
+      ansible.posix.mount:
+        path: /vagrant
+        state: unmounted

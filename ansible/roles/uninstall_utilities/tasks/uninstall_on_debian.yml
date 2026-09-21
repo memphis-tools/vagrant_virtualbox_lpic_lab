@@ -1,0 +1,19 @@
+---
+- name: Uninstall utilities
+  ansible.builtin.apt:
+    name: '{{ item }}'
+    state: absent
+  loop:
+    - curl
+    - etckeeper
+    - gnutls-bin
+    - openresolv
+    - tree
+    - psmisc
+    - tmux
+    - auditd
+    - firewalld
+    - apparmor-utils
+    - dnsutils
+    - iotop
+    - net-tools

@@ -1,0 +1,14 @@
+---
+- hosts: all
+  become: yes
+  gather_subset:
+    - '!all'
+    - '!min'
+    - distribution
+    - distribution_version
+    - os_family
+  roles:
+    - name: untrust_ca
+      tags: uninstall
+    - name: trust_ca
+      tags: install

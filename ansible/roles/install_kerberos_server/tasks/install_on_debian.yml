@@ -1,0 +1,83 @@
+---
+- name: Install kerberos and related packages
+  ansible.builtin.apt:
+    pkg:
+      - krb5-kdc
+      - krb5-admin-server
+      - krb5-user
+      - python3-pexpect
+      - nfs-common
+
+- name: Copy krb5.conf file
+  ansible.builtin.copy:
+    src: 'files/krb5.conf'
+    dest: '/etc/krb5.conf'
+    mode: '0640'
+
+- name: Run krb5_newrealm with ansible expect module
+  ansible.builtin.expect:
+    command: /usr/sbin/krb5_newrealm
+    responses:
+      'Enter KDC database master key: ': "{{ kdc_database_master_key }}\n"
+      'Re-enter KDC database master key to verify: ': "{{ kdc_database_master_key }}\n"
+  no_log: true
+
+- name: Restart kerberos systemd services
+  ansible.builtin.service:
+    name: '{{ item }}'
+    state: restarted
+    enabled: yes
+  loop:
+    - krb5-admin-server.service
+    - krb5-kdc.service
+
+- name: Create principal bastion host
+  ansible.builtin.command:
+    cmd: 'kadmin.local -q "addprinc -randkey host/bastion.vagrant-dummy-ops.lab"'
+
+- name: Create principal ldap service (with 2 encryption types)
+  ansible.builtin.command:
+    cmd: 'kadmin.local -q "addprinc -randkey {{ item }}"'
+  loop:
+    - 'ldap/openldap.vagrant-dummy-ops.lab'
+    - 'host/openldap.vagrant-dummy-ops.lab'
+
+- name: Ensure the kerberos_keytabs folder exists
+  ansible.builtin.file:
+    path: '/mnt/kerberos_keytabs/'
+    state: directory
+    mode: 0750
+    owner: kdc_user
+    group: nas_kdc
+
+- name: Mount kerberos dedicated NFS volume
+  ansible.posix.mount:
+    src: localhost:/mnt/kerberos
+    path: /mnt/kerberos_keytabs/
+    opts: rw,sync,hard
+    state: mounted
+    fstype: nfs
+
+- name: Generate the bastion host keytab
+  ansible.builtin.command:
+    cmd: 'kadmin.local -q "ktadd -k /mnt/kerberos_keytabs/bastion.keytab host/bastion.vagrant-dummy-ops.lab"'
+
+- name: Generate the openldap host keytab
+  ansible.builtin.command:
+    cmd: 'kadmin.local -q "ktadd -k /mnt/kerberos_keytabs/openldap.keytab host/openldap.vagrant-dummy-ops.lab@VAGRANT-DUMMY-OPS.LAB ldap/openldap.vagrant-dummy-ops.lab@VAGRANT-DUMMY-OPS.LAB"'
+
+- name: Unmount kerberos dedicated NFS volume
+  ansible.posix.mount:
+    path: /mnt/kerberos_keytabs/
+    state: unmounted
+
+- name: Create a principal for each default users
+  ansible.builtin.command:
+    cmd: 'kadmin.local -q "addprinc -pw {{ dummy_password }} {{ item }}@VAGRANT-DUMMY-OPS.LAB"'
+  loop:
+    - boris
+    - john
+    - donald
+    - daisy
+    - loulou
+    - fifi

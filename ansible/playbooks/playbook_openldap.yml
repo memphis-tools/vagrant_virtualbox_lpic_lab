@@ -1,0 +1,19 @@
+---
+- hosts: all
+  become: yes
+  gather_facts: yes
+  vars_files:
+    - vars/dummy_ldap_secrets.yml
+    - vars/dummy_nslcd_secret.yml
+    - vars/dummy_users_secrets.yml
+    - vars/dummy_squid_secrets.yml
+    - vars/dummy_sssd_secrets.yml
+  roles:
+    - name: uninstall_openldap
+      tags: uninstall
+    - name: install_openldap
+      tags: install
+    - name: install_nslcd_guest
+      tags: install
+    - name: ldapadd_dummy_users
+      tags: install

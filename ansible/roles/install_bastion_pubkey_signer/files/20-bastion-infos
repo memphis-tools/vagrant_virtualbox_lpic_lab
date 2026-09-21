@@ -1,0 +1,10 @@
+#!/bin/bash
+
+GREEN="\033[1;32m"
+CYAN="\033[0;36m"
+RESET="\033[0m"
+
+printf "$GREEN\nWELCOME BACK\n$CYAN"
+printf "Users will have to connect to the bastion, then create themselves a ssh keypair.\n"
+printf "A root cron job sign any '/home/***/.ssh/id_ed25519.pub' found, every minutes.\n"
+printf "Then users will be able to connect on other virtual machines using ssh.\n$RESET"

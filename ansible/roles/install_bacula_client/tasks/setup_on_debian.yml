@@ -1,0 +1,31 @@
+---
+- name: Gather package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Ensure bacula-fd and bacula-common packages are installed
+  ansible.builtin.apt:
+    name: '{{ item }}'
+    state: present
+  loop:
+    - bacula-fd
+    - bacula-common
+
+- name: Deploy FileDaemon configuration
+  ansible.builtin.template:
+    src: bacula-fd.conf.j2
+    dest: /etc/bacula/bacula-fd.conf
+    owner: root
+    group: root
+    mode: '0640'
+  notify: Restart bacula-fd
+
+- name: Permit inbound traffic in default zone on port 9102
+  ansible.posix.firewalld:
+    port: '9102/tcp'
+    permanent: true
+    state: enabled
+
+- name: Reload firewalld
+  ansible.builtin.command:
+    cmd: firewall-cmd --reload

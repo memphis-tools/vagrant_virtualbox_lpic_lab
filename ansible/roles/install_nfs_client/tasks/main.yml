@@ -1,0 +1,51 @@
+---
+- name: Gather package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Ensure nfs and stunnel4 packages are installed
+  ansible.builtin.apt:
+    name: '{{ item }}'
+    state: present
+  loop:
+    - nfs-common
+    - stunnel4
+
+- name: Set stunnel4 conf
+  ansible.builtin.copy:
+    src: 'files/stunnel.conf'
+    dest: /etc/stunnel/stunnel.conf
+    mode: '0644'
+
+- block:
+  - name: Ensure the /etc/systemd/system/autofs.service.d directory exists
+    ansible.builtin.file:
+      path: '/etc/systemd/system/autofs.service.d'
+      state: directory
+      mode: '0644'
+  - name: Update autofs service to be started after stunnel4
+    ansible.builtin.copy:
+      src: 'files/autofs_override.conf'
+      dest: '/etc/systemd/system/autofs.service.d/override.conf'
+      mode: '0644'
+  - name: Update autofs to use stunnel4
+    ansible.builtin.copy:
+      src: 'files/auto.apache'
+      dest: '/etc/auto.apache'
+    when: "'apache2' in ansible_facts.packages"
+  when: "'autofs' in ansible_facts.packages"
+
+- name: Restart stunnel4 and autofs
+  ansible.builtin.service:
+    name: '{{ item }}'
+    state: started
+    enabled: yes
+  loop:
+    - stunnel4
+    - autofs
+
+- name: Restart apache2 if installed on client
+  ansible.builtin.service:
+    name: apache2
+    state: restarted
+  when: "'apache2' in ansible_facts.packages"

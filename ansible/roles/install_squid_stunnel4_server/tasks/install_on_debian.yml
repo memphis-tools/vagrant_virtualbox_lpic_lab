@@ -1,0 +1,49 @@
+---
+- name: Gather package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Ensure stunnel4 package is installed
+  ansible.builtin.apt:
+    name: 'stunnel4'
+    state: present
+
+- name: Copy stunnel4 certificate public key
+  ansible.builtin.copy:
+    src: 'files/vagrant_squid-stunnel4-server.crt'
+    dest: /etc/ssl/localcerts/
+    mode: '0644'
+
+- name: Copy stunnel4 certificate private key
+  ansible.builtin.copy:
+    src: 'files/vagrant_squid-stunnel4-server.key'
+    dest: /etc/ssl/localcerts/
+    mode: '0600'
+
+- block:
+  - name: Copy stunnel4 conf
+    ansible.builtin.copy:
+      src: 'files/stunnel.conf'
+      dest: /etc/stunnel/stunnel.conf
+      mode: '0640'
+
+  - name: Permit https traffic
+    ansible.posix.firewalld:
+      service: https
+      state: enabled
+      zone: public
+  when: 'ansible_hostname == "squid"'
+
+- block:
+  - name: Copy stunnel4 conf
+    ansible.builtin.copy:
+      src: 'files/stunnel.conf'
+      dest: /etc/stunnel/stunnel.conf
+      mode: '0640'
+  when: 'ansible_hostname != "squid"'
+
+- name: Restart stunnel4
+  ansible.builtin.service:
+    name: 'stunnel4'
+    state: started
+    enabled: yes

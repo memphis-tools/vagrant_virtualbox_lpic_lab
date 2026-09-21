@@ -1,0 +1,64 @@
+---
+- name: Copy the ansible SSH CA signed public key
+  ansible.builtin.copy:
+    src: "files/vagrant_ansible_ca.pub"
+    dest: "/etc/ssh/vagrant_ansible_ca.pub"
+    mode: "0644"
+
+- name: Create ansible user with a home directory
+  ansible.builtin.user:
+    name: ansible
+    create_home: yes
+    shell: /bin/bash
+
+- name: Ensure perms correct for ansible user home directory
+  ansible.builtin.file:
+    path: "/home/ansible/"
+    owner: ansible
+    group: ansible
+    mode: '0700'
+
+- name: Create ansible user .ssh home directory
+  ansible.builtin.file:
+    path: "/home/ansible/.ssh"
+    state: 'directory'
+    owner: ansible
+    group: ansible
+    mode: '0700'
+
+- name: Copy the ansible SSH CA signed public key
+  ansible.builtin.copy:
+    src: "files/vagrant_ansible_ca.pub"
+    dest: "/etc/ssh/vagrant_ansible_ca.pub"
+    mode: "0644"
+
+- name: Ensure TrustedUserCAKeys set in sshd_config
+  ansible.builtin.lineinfile:
+    path: '/etc/ssh/sshd_config'
+    regexp: '^TrustedUserCAKeys'
+    line: 'TrustedUserCAKeys /etc/ssh/vagrant_ansible_ca.pub'
+
+- name: Ensure PubkeyAuthentication set to yes in sshd_config
+  ansible.builtin.lineinfile:
+    path: '/etc/ssh/sshd_config'
+    regexp: '^#PubkeyAuthentication yes'
+    line: 'PubkeyAuthentication yes'
+
+- name: Ensure PasswordAuthentication set to no in sshd_config
+  ansible.builtin.lineinfile:
+    path: '/etc/ssh/sshd_config'
+    regexp: '^PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+
+- name: Ensure sshd is restarted
+  ansible.builtin.service:
+    name: sshd
+    state: restarted
+
+- name: Allow the ansible user to run any commands as root
+  community.general.sudoers:
+    name: ansible-do-as-root
+    state: present
+    user: ansible
+    runas: root
+    commands: ALL

@@ -1,0 +1,23 @@
+---
+- name: Install postfix
+  ansible.builtin.apt:
+    name: postfix
+    state: present
+  changed_when: false
+
+- name: Ensure postfix is started
+  ansible.builtin.service:
+    name: postfix
+    state: started
+
+- name: Template main.cf
+  ansible.builtin.template:
+    src: 'dovecot_main.cf.j2'
+    dest: '/etc/postfix/main.cf'
+    mode: '0644'
+  when: 'ansible_hostname == "dovecot"'
+
+- name: Ensure postfix is restarted
+  ansible.builtin.service:
+    name: postfix
+    state: restarted

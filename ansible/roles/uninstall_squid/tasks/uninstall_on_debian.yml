@@ -1,0 +1,30 @@
+---
+- name: Remove squid packages and purge
+  ansible.builtin.apt:
+    name: '{{ item }}'
+    state: absent
+    purge: yes
+  loop:
+  - squid-common
+  - squid-openssl
+  - clamav
+  - clamav-daemon
+  - apache2-utils
+  - ldap-utils
+
+- name: Disable https and squid services
+  ansible.posix.firewalld:
+    service: '{{ item }}'
+    state: disabled
+    permanent: true
+  loop:
+    - https
+    - squid
+
+- name: Unset ip forwarding on in /proc and in the sysctl file and reload
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: '0'
+    sysctl_set: true
+    state: absent
+    reload: true

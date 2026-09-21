@@ -1,0 +1,30 @@
+$TTL	604800
+@	IN	SOA	dns1.vagrant-dummy-ops.lab. shijuro.dovecot.vagrant-dummy-ops.lab. (
+			 2      ; Serial
+			 3600		; Refresh
+			 1800		; Retry
+			 1209600		; Expire
+			 604800 )	; Negative Cache TTL
+;
+
+@ IN  NS  dns1.vagrant-dummy-ops.lab.
+@ IN  NS  dns2.vagrant-dummy-ops.lab.
+
+; PTR  records
+200	IN	PTR	dns1.vagrant-dummy-ops.lab.
+201	IN	PTR	dns2.vagrant-dummy-ops.lab.
+202	IN	PTR	vsftp.vagrant-dummy-ops.lab.
+203	IN	PTR	nas-san.vagrant-dummy-ops.lab.
+204	IN	PTR	maven.vagrant-dummy-ops.lab.
+205	IN	PTR	tomcat.vagrant-dummy-ops.lab.
+206	IN	PTR	dovecot.vagrant-dummy-ops.lab.
+207 IN	PTR	kdc.vagrant-dummy-ops.lab.
+208 IN	PTR	ansible.vagrant-dummy-ops.lab.
+209 IN	PTR	analyzer.vagrant-dummy-ops.lab.
+210 IN  PTR	squid.vagrant-dummy-ops.lab.
+211 IN  PTR	openldap.vagrant-dummy-ops.lab.
+212 IN  PTR	apache.vagrant-dummy-ops.lab.
+213 IN  PTR	nginx.vagrant-dummy-ops.lab.
+214 IN  PTR	openvpn.vagrant-dummy-ops.lab.
+216 IN  PTR bastion.vagrant-dummy-ops.lab.
+217 IN  PTR bacula.vagrant-dummy-ops.lab.

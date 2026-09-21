@@ -1,0 +1,20 @@
+---
+- name: Install on Debian
+  ansible.builtin.include_tasks:
+    file: install_on_debian.yml
+    apply:
+      tags:
+        - install
+  tags:
+    - install
+  when: ansible_distribution == 'Debian'
+
+- name: Install on Rhel
+  ansible.builtin.include_tasks:
+    file: install_on_rhel.yml
+    apply:
+      tags:
+        - uninstall
+  tags:
+    - uninstall
+  when: ansible_distribution == 'Rocky'

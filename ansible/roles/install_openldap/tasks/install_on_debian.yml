@@ -1,0 +1,18 @@
+---
+- name: Install slapd and related packages
+  ansible.builtin.apt:
+    pkg:
+    - slapd
+    - ldap-utils
+    - libnss-ldap
+    - libsasl2-modules
+    - libldap-common
+    - libsasl2-modules
+    - libsasl2-modules-gssapi-mit
+    - krb5-user
+    - nfs-common
+    - python3-ldap
+
+- name: Include task to setup sldap on Debian
+  ansible.builtin.include_tasks:
+    file: setup_on_debian.yml

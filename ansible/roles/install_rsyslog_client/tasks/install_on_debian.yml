@@ -1,0 +1,25 @@
+---
+- name: Install rsyslog
+  ansible.builtin.apt:
+    name: rsyslog
+    state: present
+  changed_when: false
+
+- name: Template rsyslog.conf
+  ansible.builtin.template:
+    src: 'rsyslog.conf.j2'
+    dest: '/etc/rsyslog.conf'
+    mode: '0644'
+
+- name: Allow RSYSLOG TCP and UDP ports permanently
+  ansible.builtin.firewalld:
+    port: '514/{{ item }}'
+    permanent: yes
+    state: enabled
+  loop: ['tcp', 'udp']
+
+- name: Ensure rsyslog is started
+  ansible.builtin.service:
+    name: rsyslog
+    enabled: yes
+    state: started

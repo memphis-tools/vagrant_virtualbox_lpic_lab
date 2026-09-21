@@ -1,0 +1,40 @@
+---
+- name: Generate SSHA hash for nslcd-client password using slappasswd
+  ansible.builtin.command:
+    cmd: 'slappasswd -s "{{ dummy_nslcd_password }}"'
+  register: slappasswd_hash
+  changed_when: false
+  no_log: true
+
+- name: Create a nslcd-client service account
+  ansible.builtin.ldap_entry:
+    dn: cn=nslcd-client.vagrant-dummy-ops.lab,ou=services,ou=it,dc=vagrant-dummy-ops,dc=lab
+    objectClass:
+      - organizationalRole
+    attributes:
+      cn: nslcd-client.vagrant-dummy-ops.lab
+      description: Service account for nslcd using SASL
+    server_uri: "ldaps://openldap.vagrant-dummy-ops.lab"
+    bind_dn: cn=admin,dc=vagrant-dummy-ops,dc=lab
+    bind_pw: "{{ root_ldap_password }}"
+  no_log: true
+
+# we can use a fallback to simple bind: olcTLSVerifyClient: try
+# to remove this possibility we use: olcTLSVerifyClient: demand
+- name: Set slapd to request a client TLS cert
+  ansible.builtin.command:
+    cmd: 'ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/ldif/06-set_olcTLSVerifyClient.ldif'
+
+- name: Set olcAuthzRegexp map CN to DN
+  ansible.builtin.command:
+    cmd: 'ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/ldif/07-authz-regexp.ldif'
+
+- name: Add ACL for nslcd-client service user
+  ansible.builtin.command:
+    cmd: 'ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/ldif/08-add_acl_nslcd_client.ldif'
+  no_log: true
+
+- name: Set SASL
+  ansible.builtin.command:
+    cmd: 'ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/ldif/09-set_SASL.ldif'
+  no_log: true

@@ -1,0 +1,9 @@
+---
+- name: Remove CA
+  ansible.builtin.file:
+    path: '/usr/local/share/ca-certificates/vagrant_ca.crt'
+    state: 'absent'
+
+- name: Update Trust CA
+  ansible.builtin.shell:
+    cmd: 'update-ca-certificates --fresh'

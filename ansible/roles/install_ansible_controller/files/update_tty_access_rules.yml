@@ -1,0 +1,17 @@
+---
+- hosts: [active]
+  gather_subset: min
+  vars_files:
+    - vars/dummy_root_secrets.yml
+  tasks:
+    - name: Ensure PAM use the /etc/security/access.conf
+      ansible.builtin.lineinfile:
+        path: '/etc/pam.d/login'
+        regexp: '^# account  required       pam_access.so'
+        line: 'account  required       pam_access.so'
+
+    - name: Only root can log through console
+      ansible.builtin.lineinfile:
+        path: '/etc/security/access.conf'
+        regexp: '-:ALL EXCEPT root vagrant ansible:LOCAL'
+        line: '-:ALL EXCEPT root vagrant ansible:LOCAL'

@@ -1,0 +1,208 @@
+---
+- name: Ensure /etc/ssl/localcerts folder exists
+  ansible.builtin.file:
+    path: '/etc/ssl/localcerts/'
+    state: directory
+    mode: 0755
+
+- name: Copy openldap x509 pub key
+  ansible.builtin.copy:
+    src: 'files/vagrant_openldap.crt'
+    dest: '/etc/ssl/localcerts/vagrant_openldap.crt'
+    mode: '0640'
+    owner: openldap
+    group: openldap
+
+- name: Copy openldap x509 private key
+  ansible.builtin.copy:
+    src: 'files/vagrant_openldap.key'
+    dest: '/etc/ssl/localcerts/vagrant_openldap.key'
+    mode: '0600'
+    owner: openldap
+    group: openldap
+
+- name: Enable ldapi
+  ansible.builtin.lineinfile:
+    path: /etc/default/slapd
+    regex: '^SLAPD_SERVICES'
+    line: 'SLAPD_SERVICES="ldapi:/// ldap:/// ldaps:///"'
+    mode: '0644'
+
+- name: Restart slapd
+  ansible.builtin.service:
+    name: slapd
+    state: restarted
+
+- name: Generate SSHA hash for root password using slappasswd
+  ansible.builtin.command:
+    cmd: 'slappasswd -s "{{ root_ldap_password }}"'
+  register: slappasswd_hash
+  changed_when: false
+  no_log: true
+
+- name: Ensure a dedicated OpenLdap ldif directory exist
+  ansible.builtin.file:
+    path: /etc/ldap/ldif
+    state: directory
+    owner: openldap
+    group: openldap
+    mode: '0700'
+
+- name: Template ldif file
+  ansible.builtin.template:
+    src: '{{ item }}'
+    dest: '/etc/ldap/ldif/{{ item | basename | regex_replace("\.ldif.j2$", "") }}.ldif'
+    owner: 'openldap'
+    group: 'openldap'
+    mode: '0644'
+  loop:
+    - '01-add_database.ldif.j2'
+    - '02-add_root_domain_and_admin.ldif.j2'
+    - '03-add_base_structure.ldif.j2'
+    - '04-add_acl_nslcd.ldif.j2'
+    - '05-modify_tls.ldif.j2'
+    - '06-set_olcTLSVerifyClient.ldif.j2'
+    - '07-authz-regexp.ldif.j2'
+    - '08-add_acl_nslcd_client.ldif.j2'
+    - '09-set_SASL.ldif.j2'
+    - '10-add_dummy_groups.ldif.j2'
+    - '11-remove-database.ldif.j2'
+    - '12-add_members.ldif.j2'
+    - '13-remove_all_members_from_posixgroups.ldif.j2'
+    - '14-add_acl_sssd_guest.ldif.j2'
+    - '15-set-sasl-realm.ldif.j2'
+
+- name: Ensure dedicated OpenLDAP database directory exists
+  ansible.builtin.file:
+    path: /var/lib/ldap-vagrant-dummy-ops
+    state: directory
+    owner: openldap
+    group: openldap
+    mode: '0700'
+
+# - name: Get the current database
+#   ansible.builtin.shell:
+#     cmd: 'slapcat -n 0 -F /etc/ldap/slapd.d/'
+#   register: slap_conf
+#
+# - name: Debug the current database
+#   debug:
+#     msg: '{{ slap_conf.stdout_lines }}'
+
+- name: Remove the previous database
+  ansible.builtin.command:
+    cmd: 'ldapmodify -H ldapi:/// -Y EXTERNAL -f /etc/ldap/ldif/11-remove-database.ldif'
+
+- name: Create a new dedicated ldap database
+  ansible.builtin.command:
+    cmd: 'ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/ldap/ldif/01-add_database.ldif'
+
+- name: Set the root and base structure
+  ansible.builtin.command:
+    cmd: 'ldapadd -x -D "cn=admin,dc=vagrant-dummy-ops,dc=lab" -f /etc/ldap/ldif/{{ item }} -w {{ root_ldap_password }}'
+  loop:
+    - 02-add_root_domain_and_admin.ldif
+    - 03-add_base_structure.ldif
+  no_log: true
+
+- name: Add ACL for nslcd_guest service user
+  ansible.builtin.command:
+    cmd: 'ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/ldap/ldif/04-add_acl_nslcd.ldif'
+  no_log: true
+
+- name: Set the TLS
+  ansible.builtin.command:
+    cmd: 'ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/ldif/05-modify_tls.ldif'
+  no_log: true
+
+- name: Add dummy users groups
+  ansible.builtin.command:
+    cmd: 'ldapadd -x -D "cn=admin,dc=vagrant-dummy-ops,dc=lab" -f /etc/ldap/ldif/10-add_dummy_groups.ldif -w {{ root_ldap_password }}'
+  no_log: true
+
+- name: Update posixgroups with memberUid
+  ansible.builtin.command:
+    cmd: 'ldapadd -x -D "cn=admin,dc=vagrant-dummy-ops,dc=lab" -f /etc/ldap/ldif/12-add_members.ldif -w {{ root_ldap_password }}'
+  no_log: true
+
+- name: Copy slapd default env vars
+  ansible.builtin.copy:
+    src: 'files/slapd'
+    dest: '/etc/default/slapd'
+    mode: '0644'
+
+- name: Copy ldap client conf
+  ansible.builtin.copy:
+    src: 'files/ldap.conf'
+    dest: '/etc/ldap/ldap.conf'
+    owner: openldap
+    group: openldap
+    mode: '0644'
+
+- name: Add ACL for sssd_guest service user
+  ansible.builtin.command:
+    cmd: 'ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/ldap/ldif/14-add_acl_sssd_guest.ldif'
+  no_log: true
+
+- name: Enable GSSAPI auth capability
+  ansible.builtin.command:
+    cmd: 'ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/ldif/15-set-sasl-realm.ldif'
+  no_log: true
+
+- name: Include task to add nslcd_guest service account
+  ansible.builtin.include_tasks:
+    file: ldapadd_nslcd_guest_without_sasl.yml
+
+- name: Include task to add nslcd_client service account
+  ansible.builtin.include_tasks:
+    file: ldapadd_nslcd_client_with_sasl.yml
+
+- name: Include task to add sssd_guest service account
+  ansible.builtin.include_tasks:
+    file: ldapadd_sssd_guest_without_sasl.yml
+
+- name: Include task to add squid service account
+  ansible.builtin.include_tasks:
+    file: ldapadd_squid_service.yml
+
+- name: Disable ldapi
+  ansible.builtin.lineinfile:
+    path: /etc/default/slapd
+    regex: '^SLAPD_SERVICES'
+    line: 'SLAPD_SERVICES="ldap:/// ldaps:///"'
+    mode: '0644'
+
+- name: Ensure the kerberos_keytabs folder exists
+  ansible.builtin.file:
+    path: '/mnt/kerberos_keytabs/'
+    state: directory
+    mode: 0750
+    owner: kdc_user
+    group: nas_kdc
+
+- name: Mount kerberos dedicated NFS volume
+  ansible.posix.mount:
+    src: localhost:/mnt/kerberos
+    path: /mnt/kerberos_keytabs/
+    opts: rw,sync,hard
+    state: mounted
+    fstype: nfs
+
+- name: 'Get the keytab for {{ ansible_hostname }}'
+  ansible.builtin.copy:
+    src: '/mnt/kerberos_keytabs/{{ ansible_hostname }}.keytab'
+    dest: /etc/krb5.keytab
+    owner: root
+    group: openldap
+    mode: 0640
+    remote_src: yes
+
+- name: Unmount kerberos dedicated NFS volume
+  ansible.posix.mount:
+    path: /mnt/kerberos_keytabs/
+    state: unmounted
+
+- name: Restart slapd
+  ansible.builtin.service:
+    name: slapd
+    state: restarted

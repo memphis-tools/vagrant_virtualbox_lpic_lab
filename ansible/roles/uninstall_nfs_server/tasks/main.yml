@@ -1,0 +1,19 @@
+---
+- name: Ensure nfs and stunnel4 packages are uninstalled and purged
+  ansible.builtin.apt:
+    name: '{{ item }}'
+    state: absent
+    purge: yes
+  loop:
+    - nfs-kernel-server
+    - nfs-common
+    - stunnel4
+
+- name: Remove the local loopback for nfs
+  ansible.builtin.command:
+    cmd: 'ip addr del {{ item }} dev lo'
+  loop:
+    - 127.0.0.2/8
+    - 127.0.0.3/8
+    - 127.0.0.4/8
+  ignore_errors: true

@@ -1,0 +1,9 @@
+---
+- hosts: all
+  become: yes
+  gather_subset: min
+  roles:
+    - name: uninstall_utilities
+      tags: uninstall
+    - name: install_utilities
+      tags: install

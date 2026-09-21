@@ -1,0 +1,21 @@
+client
+dev tun
+proto udp
+remote openvpn.vagrant-dummy-ops.lab 1194
+cipher AES-256-GCM
+data-ciphers AES-256-GCM:AES-128-GCM:CHACHA20-POLY1305
+auth SHA256
+#remote-cert-tls server
+tls-client
+ca /usr/local/share/ca-certificates/vagrant_ca.crt
+cert /etc/ssl/localcerts/vagrant_openvpn-client.crt
+key /etc/ssl/localcerts/vagrant_openvpn-client.key
+verb 3
+
+# apt install openresolv
+# This will replace /etc/resolv.conf with the DNS server pushed by the OpenVPN server (10.0.2.3).
+script-security 2
+up /etc/openvpn/update-resolv-conf
+down /etc/openvpn/update-resolv-conf
+
+#route 10.0.2.0 255.255.255.0

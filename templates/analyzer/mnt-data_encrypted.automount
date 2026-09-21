@@ -1,0 +1,12 @@
+[Unit]
+Description=Automount file for iscsi mirrored disk share
+Requires=systemd-udevd.service
+After=systemd-udevd.service
+
+[Automount]
+Where=/mnt/data_encrypted/
+DirectoryMode=0750
+TimeoutIdleSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,11 @@
+---
+- hosts: [active]
+  gather_subset: min
+  vars_files:
+    - vars/dummy_squid_secrets.yml
+  tasks:
+    - name: Get apt update through squid
+      ansible.builtin.command:
+        cmd: 'apt-get -o Acquire::https::Proxy="https://squid:{{ dummy_squid_password }}@squid.vagrant-dummy-ops.lab:443/" update'
+      no_log: true
+_

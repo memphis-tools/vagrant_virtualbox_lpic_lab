@@ -1,0 +1,21 @@
+- name: Create user with home and sudo
+  ansible.builtin.ldap_entry:
+    dn: uid={{ user.uid }},ou={{ user.root_ou }},ou=it,dc=vagrant-dummy-ops,dc=lab
+    objectClass:
+      - inetOrgPerson
+      - posixAccount
+      - shadowAccount
+    attributes:
+      uid: '{{ user.uid }}'
+      cn: '{{ user.fulluid }}'
+      sn: '{{ user.sn }}'
+      uidNumber: '{{ user.uidNumber }}'
+      gidNumber: '{{ user.gidNumber }}'
+      homeDirectory: '/home/{{ user.uid }}'
+      mail: '{{ user.mail }}'
+      loginShell: /bin/bash
+      userPassword: '{{ slappasswd_hash.stdout }}'
+    server_uri: "ldaps://openldap.vagrant-dummy-ops.lab"
+    bind_dn: cn=admin,dc=vagrant-dummy-ops,dc=lab
+    bind_pw: "{{ root_ldap_password }}"
+  no_log: true

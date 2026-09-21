@@ -1,0 +1,12 @@
+[Unit]
+Description=the service which will trigger the automount luks formated folder
+Requires=systemd-udevd.service
+After=systemd-udevd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/cryptsetup luksOpen /dev/sdb1 data_encrypted --key-file=/root/.luks.key
+RemainAfterExit=True
+
+[Install]
+WantedBy=multi-user.target

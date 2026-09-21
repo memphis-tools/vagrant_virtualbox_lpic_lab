@@ -1,0 +1,7 @@
+---
+stunnel4_server_apache_remote_port: 2363
+stunnel4_server_tomcat_remote_port: 2364
+stunnel4_server_maven_remote_port: 2364
+stunnel4_server_kdc_remote_port: 2365
+stunnel4_server_openldap_remote_port: 2365
+stunnel4_server_bastion_remote_port: 2365

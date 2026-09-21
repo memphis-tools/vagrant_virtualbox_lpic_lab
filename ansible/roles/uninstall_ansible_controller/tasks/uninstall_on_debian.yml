@@ -1,0 +1,39 @@
+---
+- name: Check if ssh-agent process is running
+  ansible.builtin.command:
+    cmd: 'pidof ssh-agent'
+  register: sshagent_pid
+  ignore_errors: true
+  changed_when: false
+
+- name: Ensure ssh-agent process killed
+  ansible.builtin.command:
+    cmd: 'pkill ssh-agent'
+  when: 'sshagent_pid.stdout != ""'
+
+- name: Remove the user 'ansible'
+  ansible.builtin.user:
+    name: ansible
+    state: absent
+    remove: yes
+
+- name: Remove the ansible SSH CA signed public key
+  ansible.builtin.file:
+    path: "/etc/ssh/vagrant_ansible_ca.pub"
+    state: "absent"
+
+- name: Ensure TrustedUserCAKeys not set in sshd_config
+  ansible.builtin.lineinfile:
+    path: '/etc/ssh/sshd_config'
+    regexp: '^TrustedUserCAKeys'
+    state: absent
+
+- name: Ensure sshd is restarted
+  ansible.builtin.service:
+    name: sshd
+    state: restarted
+
+- name: Disallow the ansible user to run any commands as root
+  community.general.sudoers:
+    name: ansible-do-as-root
+    state: absent

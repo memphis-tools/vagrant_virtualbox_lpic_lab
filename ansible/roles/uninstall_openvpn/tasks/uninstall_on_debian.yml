@@ -1,0 +1,42 @@
+---
+- block:
+  - name: Stop openvpn server default systemd service
+    ansible.builtin.service:
+      name: 'openvpn@server.service'
+      state: stopped
+
+  - name: Disable openvpn server default systemd service
+    ansible.builtin.service:
+      name: 'openvpn@server.service'
+      enabled: false
+  when: 'ansible_hostname == "openvpn"'
+
+- block:
+  - name: Stop openvpn client default systemd service
+    ansible.builtin.service:
+      name: 'openvpn@client.service'
+      state: stopped
+
+  - name: Disable openvpn client default systemd service
+    ansible.builtin.service:
+      name: 'openvpn@client.service'
+      enabled: false
+  when: 'ansible_hostname != "openvpn"'
+
+- name: Stop openvpn default service
+  ansible.builtin.service:
+    name: openvpn
+    state: stopped
+
+- name: Disable openvpn default service
+  ansible.builtin.service:
+    name: openvpn
+    enabled: false
+
+- name: Uninstall openvpn package
+  ansible.builtin.apt:
+    name: '{{ item }}'
+    purge: yes
+  loop:
+    - openvpn
+    - easy-rsa

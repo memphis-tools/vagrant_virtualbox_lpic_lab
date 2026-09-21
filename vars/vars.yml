@@ -1,0 +1,6 @@
+extra_disks_folder_path: /mnt/VirtualBox VMs/vagrant_extra_disks
+low_memory: 512
+middle_memory: 1024
+high_memory: 2048
+cpus: 1
+network_interface: wlp2s0

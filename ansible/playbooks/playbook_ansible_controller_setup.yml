@@ -1,0 +1,11 @@
+---
+- hosts: all
+  become: yes
+  gather_subset: min
+  vars_files:
+    - vars/dummy_ansible_secrets.yml
+  roles:
+    - name: uninstall_ansible_controller
+      tags: uninstall
+    - name: install_ansible_controller
+      tags: install

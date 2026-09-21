@@ -1,0 +1,21 @@
+---
+- name: Remove the custom motd
+  ansible.builtin.file:
+    path: /etc/update-motd.d/20-bastion-infos
+    state: absent
+
+- name: Remove the bash script
+  ansible.builtin.file:
+    path: /root/sign_ssh_pub_key.sh
+    state: absent
+
+- name: Remove the vagrant_ansible_ca private key
+  ansible.builtin.file:
+    path: /root/vagrant_ansible_ca
+    state: absent
+
+- name: Remove the vagrant_ansible_ca passphrase file
+  ansible.builtin.file:
+    path: /root/passphrase
+    state: absent
+  no_log: true

@@ -1,0 +1,10 @@
+dn: cn=config
+changetype: modify
+replace: olcTLSCACertificateFile
+olcTLSCACertificateFile: /usr/local/share/ca-certificates/vagrant_ca.crt
+-
+replace: olcTLSCertificateFile
+olcTLSCertificateFile: /etc/ssl/localcerts/vagrant_openldap.crt
+-
+replace: olcTLSCertificateKeyFile
+olcTLSCertificateKeyFile: /etc/ssl/localcerts/vagrant_openldap.key

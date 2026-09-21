@@ -1,0 +1,14 @@
+pid = /run/stunnel.pid
+debug = 7
+output = /var/log/stunnel4/stunnel.log
+
+[nfs-client]
+client = yes
+accept = 127.0.0.1:2049
+connect = nas-san.vagrant-dummy-ops.lab:{{ lookup('vars', 'stunnel4_server_' ~ ansible_hostname ~ '_remote_port') }}
+checkHost = nas-san.vagrant-dummy-ops.lab
+cert = /etc/ssl/localcerts/vagrant_{{ ansible_hostname }}.crt
+key = /etc/ssl/localcerts/vagrant_{{ ansible_hostname }}.key
+CAfile = /usr/local/share/ca-certificates/vagrant_ca.crt
+sslVersion = TLSv1.3
+verify = 2

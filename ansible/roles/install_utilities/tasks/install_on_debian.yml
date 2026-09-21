@@ -1,0 +1,23 @@
+---
+- name: Install utilities
+  ansible.builtin.apt:
+    name: '{{ item }}'
+    state: present
+  loop:
+    - curl
+    - etckeeper
+    - gnutls-bin
+    - openresolv
+    - tree
+    - psmisc
+    - tmux
+    - auditd
+    - firewalld
+    - apparmor-utils
+    - dnsutils
+    - iotop
+    - net-tools
+
+# - name: Reload openresolv
+#   ansible.builtin.command:
+#     cmd: 'resolvconf -u'

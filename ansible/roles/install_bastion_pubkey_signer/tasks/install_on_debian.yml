@@ -1,0 +1,30 @@
+---
+- name: Copy a custom motd
+  ansible.builtin.copy:
+    src: 'files/20-bastion-infos'
+    dest: /etc/update-motd.d/20-bastion-infos
+    mode: 0755
+
+- name: Truncate /etc/motd with empty content
+  ansible.builtin.copy:
+    dest: /etc/motd
+    content: ""
+
+- name: Copy the bash script
+  ansible.builtin.copy:
+    src: 'files/sign_ssh_pub_key.sh'
+    dest: /root/sign_ssh_pub_key.sh
+    mode: 0640
+
+- name: Copy the vagrant_ansible_ca private key
+  ansible.builtin.copy:
+    src: 'files/vagrant_ansible_ca'
+    dest: /root/vagrant_ansible_ca
+    mode: 0600
+
+- name: Touch the vagrant_ansible_ca passphrase file
+  ansible.builtin.copy:
+    dest: /root/passphrase
+    content: '{{ vagrant_ansible_ca_passphrase }}'
+    mode: 0600
+  no_log: true

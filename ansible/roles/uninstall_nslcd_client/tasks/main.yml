@@ -1,0 +1,9 @@
+---
+- name: Ensure nslcd package is uninstalled and purged
+  ansible.builtin.apt:
+    name: '{{ item }}'
+    state: absent
+    purge: yes
+  loop:
+    - nslcd
+    - libsasl2-modules

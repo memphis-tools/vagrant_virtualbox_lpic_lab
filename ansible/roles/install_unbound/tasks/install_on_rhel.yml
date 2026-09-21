@@ -1,0 +1,9 @@
+---
+- name: Install unbound
+  ansible.builtin.dnf:
+    name: unbound
+    state: present
+
+- name: Include task to setup unbound on RHEL
+  ansible.builtin.include_tasks:
+    file: setup_on_rhel.yml

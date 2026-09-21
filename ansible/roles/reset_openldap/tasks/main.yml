@@ -1,0 +1,20 @@
+---
+- name: Reset on Debian
+  ansible.builtin.include_tasks:
+    file: reset_on_debian.yml
+    apply:
+      tags:
+        - reset
+  tags:
+    - reset
+  when: ansible_distribution == 'Debian'
+
+- name: Reset on Rhel
+  ansible.builtin.include_tasks:
+    file: reset_on_rhel.yml
+    apply:
+      tags:
+        - reset
+  tags:
+    - reset
+  when: ansible_distribution == 'Rocky'

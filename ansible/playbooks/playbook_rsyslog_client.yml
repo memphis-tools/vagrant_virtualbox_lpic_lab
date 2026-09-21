@@ -1,0 +1,15 @@
+---
+- hosts: all
+  become: yes
+  gather_subset:
+    - '!all'
+    - '!min'
+    - distribution
+    - distribution_version
+    - os_family
+    - platform
+  roles:
+    - name: uninstall_rsyslog_client
+      tags: uninstall
+    - name: install_rsyslog_client
+      tags: install

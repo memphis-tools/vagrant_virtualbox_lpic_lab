@@ -1,0 +1,6 @@
+---
+- name: Ensure sssd package is removed with config files purged
+  ansible.builtin.apt:
+    name: sssd
+    state: absent
+    purge: yes

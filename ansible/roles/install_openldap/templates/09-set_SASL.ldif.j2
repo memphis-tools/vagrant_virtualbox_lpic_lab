@@ -1,0 +1,13 @@
+dn: cn=config
+changetype: modify
+# Set SASL
+add: olcSaslHost
+olcSaslHost: openldap.vagrant-dummy-ops.lab
+
+-
+add: olcSaslRealm
+olcSaslRealm: VAGRANT-DUMMY-OPS.LAB
+
+-
+add: olcSaslSecProps
+olcSaslSecProps: noanonymous,noplain,noactive

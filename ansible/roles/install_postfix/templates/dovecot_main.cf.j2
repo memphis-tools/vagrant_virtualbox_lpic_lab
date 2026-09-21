@@ -1,0 +1,44 @@
+smtpd_banner = $myhostname ESMTP $mail_name (Debian/GNU)
+biff = no
+append_dot_mydomain = no
+readme_directory = no
+compatibility_level = 3.6
+smtpd_tls_cert_file=/etc/dovecot/private/dovecot.pem
+smtpd_tls_key_file=/etc/dovecot/private/dovecot.key
+smtpd_tls_security_level=may
+smtp_tls_CApath=/etc/ssl/certs
+smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination
+myhostname = {{ ansible_hostname }}.vagrant-dummy-ops.lab
+# We auto detect the user, but if needed aliases must be set
+# alias example: "donald: donald@dovecot.vagrant-dummy-ops.lab"
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+mydomain = vagrant-dummy-ops.lab
+mydestination = $myhostname, localhost.$mydomain, localhost
+myorigin = vagrant-dummy-ops.lab
+relayhost =
+mynetworks = 192.168.1.0/24
+mailbox_size_limit = 0
+recipient_delimiter = +
+inet_interfaces = all
+inet_protocols = all
+smtp_address_preference = ipv4
+
+# Enable DANE (DNS-based Authentication of Named Entities)
+smtp_tls_security_level = dane
+smtp_dns_support_level = dnssec
+smtp_host_lookup = dns
+smtp_tls_loglevel = 2
+
+# Configure Postfix to use Dovecot for local delivery
+home_mailbox = Maildir/
+virtual_transport = lmtp:unix:private/dovecot-lmtp
+mailbox_transport = lmtp:unix:private/dovecot-lmtp
+#debug_peer_level = 3
+#debug_peer_list = localhost
+#smtpd_tls_loglevel = 2
+#smtpd_debug = yes
+
+# Allow Postfix to connect to Dovecot’s LMTP socket
+#local_recipient_maps = $alias_maps

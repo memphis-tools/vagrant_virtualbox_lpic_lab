@@ -1,0 +1,11 @@
+---
+- name: Stop service
+  ansible.builtin.service:
+    name: 'postfix'
+    state: 'stopped'
+  changed_when: false
+
+- name: Uninstall package
+  ansible.builtin.apt:
+    name: 'postfix'
+    state: 'absent'

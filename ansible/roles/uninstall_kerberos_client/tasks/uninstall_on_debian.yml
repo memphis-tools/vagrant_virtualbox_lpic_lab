@@ -1,0 +1,5 @@
+---
+- name: Remove krb5.conf file
+  ansible.builtin.file:
+    path: '/etc/krb5.conf'
+    state: absent

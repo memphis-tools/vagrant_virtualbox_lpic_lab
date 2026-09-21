@@ -1,0 +1,14 @@
+server 192.168.1.200 { keys { transfer; }; };
+zone "vagrant-dummy-ops.lab" {
+    type slave;
+    masters { 192.168.1.200; };
+    key-directory "/etc/bind/keys";
+    file "/etc/bind/db.vagrant-dummy-ops.lab.signed";
+};
+
+zone "1.168.192.in-addr.arpa" {
+    type slave;
+    masters { 192.168.1.200; };
+    key-directory "/etc/bind/keys";
+    file "/etc/bind/db.1.168.192.in-addr.arpa.signed";
+};

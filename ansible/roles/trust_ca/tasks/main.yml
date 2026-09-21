@@ -1,0 +1,20 @@
+---
+- name: Trust on Debian
+  ansible.builtin.include_tasks:
+    file: trust_on_debian.yml
+    apply:
+      tags:
+        - install
+  tags:
+    - install
+  when: ansible_distribution == 'Debian'
+
+- name: Trust on Rhel
+  ansible.builtin.include_tasks:
+    file: trust_on_rhel.yml
+    apply:
+      tags:
+        - install
+  tags:
+    - install
+  when: ansible_distribution == 'Rocky'

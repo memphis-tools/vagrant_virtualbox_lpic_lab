@@ -1,0 +1,98 @@
+---
+- name: Ensure nfs and stunnel4 packages are installed
+  ansible.builtin.apt:
+    name: '{{ item }}'
+    state: present
+  loop:
+    - nfs-kernel-server
+    - nfs-common
+    - stunnel4
+
+- name: Set the chroot stunnel4 log file
+  ansible.builtin.file:
+    path: '/var/lib/stunnel4/stunnel.log'
+    owner: 'stunnel4'
+    group: 'stunnel4'
+    mode: '0644'
+    state: touch
+
+- name: Remove log file if it exists
+  ansible.builtin.file:
+    path: /var/log/stunnel4/stunnel.log
+    state: absent
+
+- name: Create a symbolic link
+  ansible.builtin.file:
+    src: /var/lib/stunnel4/stunnel.log
+    dest: /var/log/stunnel4/stunnel.log
+    owner: 'stunnel4'
+    group: 'stunnel4'
+    state: link
+
+- name: Ensure to set the vagrant dummy-ops CA to be trusted by stunnel4
+  ansible.builtin.copy:
+    src: /usr/local/share/ca-certificates/vagrant_ca.crt
+    dest: /etc/stunnel/ca-certs.pem
+    mode: '0644'
+    remote_src: yes
+
+- name: Generate DH Parameters for stunnel4
+  community.crypto.openssl_dhparam:
+    path: /etc/stunnel/dh.pem
+    size: 2048
+
+- name: Permit inbound traffic in default zone on port 2363, 2364 and 2365 for stunnel4
+  ansible.posix.firewalld:
+    port: '{{ item }}/tcp'
+    permanent: true
+    state: enabled
+  loop:
+    - 2363
+    - 2364
+    - 2365
+
+- name: Reload firewalld
+  ansible.builtin.command:
+    cmd: firewall-cmd --reload
+
+- name: Set nfs conf
+  ansible.builtin.copy:
+    src: 'files/nfs.conf'
+    dest: /etc/nfs.conf
+    mode: '0644'
+
+- name: Set stunnel4 conf
+  ansible.builtin.copy:
+    src: 'files/stunnel.conf'
+    dest: /etc/stunnel/stunnel.conf
+    mode: '0644'
+
+- name: Define the exports
+  ansible.builtin.copy:
+    src: 'files/exports'
+    dest: /etc/exports
+    mode: '0644'
+
+- name: As a trick add local loopback for nfs
+  ansible.builtin.command:
+    cmd: 'ip addr add {{ item }} dev lo'
+  loop:
+    - 127.0.0.2/8
+    - 127.0.0.3/8
+    - 127.0.0.4/8
+
+- name: Set local loopback trick as permanent
+  ansible.builtin.template:
+    src: 'network_interfaces.j2'
+    dest: /etc/network/interfaces
+    mode: '0644'
+
+- name: Restart stunnel4, nfs-kernel-server and nfs-server.service
+  ansible.builtin.service:
+    name: '{{ item }}'
+    state: restarted
+    enabled: yes
+  loop:
+    - stunnel4
+    - nfs-kernel-server.service
+    - nfs-server.service

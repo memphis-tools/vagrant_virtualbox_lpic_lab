@@ -1,0 +1,6 @@
+---
+- name: Remove unbound
+  ansible.builtin.dnf:
+    name: unbound
+    state: absent
+    purge: yes

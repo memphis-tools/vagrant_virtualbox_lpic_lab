@@ -1,0 +1,31 @@
+port 1194
+dev tun
+proto udp
+topology subnet
+cipher AES-256-GCM
+data-ciphers AES-256-GCM:AES-128-GCM:CHACHA20-POLY1305
+auth SHA256
+remote-cert-tls client
+# 10 openvpn server send a ping every 10 seconds to client to check if alive
+# 120 If the server sends a ping and doesn't receive a response within 120 seconds, it will assume the client is down or disconnected and will close the VPN session.
+keepalive 10 120
+dh /etc/openvpn/server/dh2048.pem
+ca /usr/local/share/ca-certificates/vagrant_ca.crt
+cert /etc/ssl/localcerts/vagrant_openvpn-server.crt
+key /etc/ssl/localcerts/vagrant_openvpn-server.key
+askpass /etc/openvpn/server.pass
+
+local 192.168.1.214
+
+# Clients ip range
+server 192.168.2.0 255.255.255.0
+
+
+# if we want the client to use the openvpn-server ip as default route
+#push "redirect-gateway def1"
+
+# if we want the client to use specific DNS servers (e.g., Google’s 8.8.8.8), we can push DNS settings too.
+push "dhcp-option DNS 8.8.8.8"
+push "dhcp-option DNS 8.8.4.4"
+
+verb 3

@@ -1,0 +1,9 @@
+---
+- hosts: [active:!bacula:!openvpn]
+  become: yes
+  gather_facts: yes
+  roles:
+    - name: uninstall_bacula_client
+      tags: uninstall
+    - name: install_bacula_client
+      tags: install

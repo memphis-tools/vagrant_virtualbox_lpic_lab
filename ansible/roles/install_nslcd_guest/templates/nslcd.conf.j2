@@ -1,0 +1,14 @@
+uid nslcd
+gid nslcd
+uri ldaps://openldap.vagrant-dummy-ops.lab:636
+base ou=it,dc=vagrant-dummy-ops,dc=lab
+binddn cn={{ dummy_nslcd_account_name }},ou=services,ou=it,dc=vagrant-dummy-ops,dc=lab
+bindpw {{ dummy_nslcd_password }}
+ssl on
+tls_reqcert demand
+tls_cacertfile /usr/local/share/ca-certificates/vagrant_ca.crt
+{% if ansible_hostname in ["dns1","dns2","vsftp","nas","openldap","squid","openvpn","dovecot"] %}
+pam_authz_search (&(objectClass=posixGroup)(cn=sysadmin)(memberUid=$username))
+{% elif ansible_hostname in ["apache", "nginx"] %}
+pam_authz_search (&(objectClass=posixGroup)(|(cn=sysadmin)(cn=developer))(memberUid=$username))
+{% endif %}

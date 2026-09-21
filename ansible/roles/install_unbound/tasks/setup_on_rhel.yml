@@ -1,0 +1,56 @@
+---
+- name: Create the Unbound log directory
+  ansible.builtin.file:
+    path: '{{ unbound_log_dir }}'
+    state: directory
+    owner: '{{ unbound_user }}'
+    group: '{{ unbound_group }}'
+    mode: '0750'
+
+- name: Create the Unbound log file
+  ansible.builtin.file:
+    path: '{{ unbound_log_file }}'
+    state: touch
+    owner: '{{ unbound_user }}'
+    group: '{{ unbound_group }}'
+    mode: '0750'
+    force: false
+
+- name: Get the forward zone's KSK
+  ansible.builtin.shell:
+    cmd: "dig DNSKEY vagrant-dummy-ops.lab. @192.168.1.200 +dnssec | grep '257'"
+  register: 'temp_vagrant_dummy_ops_lab_KSK'
+  changed_when: false
+
+- name: Extract expected output
+  ansible.builtin.set_fact:
+    vagrant_dummy_ops_lab_KSK: '{{ temp_vagrant_dummy_ops_lab_KSK.stdout_lines[0] }}'
+
+- name: Get the reverse zone's KSK
+  ansible.builtin.shell:
+    cmd: "dig DNSKEY 1.168.192.in-addr.arpa. @192.168.1.200 +dnssec | grep '257'"
+  register: 'temp_reverse_vagrant_dummy_ops_lab_KSK'
+  changed_when: false
+
+- name: Extract expected output
+  ansible.builtin.set_fact:
+    reverse_vagrant_dummy_ops_lab_KSK: '{{ temp_reverse_vagrant_dummy_ops_lab_KSK.stdout_lines[0] }}'
+
+- name: Template the unbound configuration file
+  ansible.builtin.template:
+    src: 'rhel_unbound.conf.j2'
+    dest: '/etc/unbound/unbound.conf'
+    owner: '{{ unbound_user }}'
+    group: '{{ unbound_group }}'
+    mode: '0754'
+
+- name: Ensure unbound conf perms are correct
+  ansible.builtin.file:
+    path: '/etc/unbound/unbound.conf'
+    owner: '{{ unbound_user }}'
+    group: '{{ unbound_group }}'
+
+- name: Restart unbound
+  ansible.builtin.systemd_service:
+    name: unbound
+    state: restarted

@@ -1,0 +1,17 @@
+Include /etc/ssh/sshd_config.d/*.conf
+# For "bastion" host a pubkey authentication is yes, because "vagrant" user "not in our openldap, not a user lab"
+# So need to adjust
+PubkeyAuthentication yes
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+GSSAPIAuthentication yes
+GSSAPICleanupCredentials yes
+GSSAPIKeyExchange yes
+UsePAM yes
+X11Forwarding yes
+PrintMotd no
+AcceptEnv LANG LC_*
+Subsystem	sftp	/usr/lib/openssh/sftp-server
+ClientAliveInterval 120
+UseDNS no
+TrustedUserCAKeys /etc/ssh/vagrant_ansible_ca.pub

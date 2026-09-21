@@ -1,0 +1,67 @@
+---
+- block:
+  - name: Ensure dovecot started
+    ansible.builtin.service:
+      name: 'dovecot'
+      state: started
+
+  - name: Add local group dummy_users
+    ansible.builtin.group:
+      name: dummy_users
+      state: present
+    changed_when: false
+
+  - block:
+    - name: Add dummy local users
+      ansible.builtin.user:
+        name: '{{ item }}'
+        shell: /bin/bash
+        group: dummy_users
+        createhome: yes
+        state: present
+        password: "{{ dummy_password | password_hash('sha512') }}"
+      loop: ['shijuro']
+
+    - name: Ensure correct dummy home directory permissions for local users
+      ansible.builtin.file:
+        path: "/home/{{ item }}"
+        mode: '0700'
+        owner: "{{ item }}"
+        group: dummy_users
+        state: directory
+      loop: ['shijuro']
+
+    - name: Create mail directory for local users
+      ansible.builtin.file:
+        path: "/var/mail/vhosts/{{ item }}"
+        state: directory
+        owner: vmail
+        group: vmail
+        mode: '2700'
+      loop: ['shijuro']
+
+    - name: Create Sieve directory for local users
+      ansible.builtin.file:
+        path: "/var/mail/vhosts/{{ item }}/sieve"
+        state: directory
+        owner: vmail
+        group: vmail
+        mode: '2700'
+      loop: ['shijuro']
+
+    - name: Copy Sieve filter for local users
+      ansible.builtin.copy:
+        src: "/vagrant_templates/sieve/filters.sieve"
+        dest: "/var/mail/vhosts/{{ item }}/sieve/filters.sieve"
+        owner: vmail
+        group: vmail
+        mode: '0600'
+        remote_src: true
+      loop: ['shijuro']
+
+    # Remember we use "filters" as a key word because we created ~/sieve/filters.sieve
+    - name: Activate the sieve filter for dummy local users
+      ansible.builtin.shell:
+        cmd: doveadm sieve activate -u {{ item }} filters
+      loop: ['shijuro']
+  tags: install

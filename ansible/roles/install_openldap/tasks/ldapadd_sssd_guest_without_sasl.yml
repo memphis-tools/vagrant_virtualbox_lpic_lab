@@ -1,0 +1,22 @@
+---
+- name: Generate SSHA hash for sssd_guest password using slappasswd
+  ansible.builtin.command:
+    cmd: 'slappasswd -s "{{ dummy_sssd_password }}"'
+  register: slappasswd_hash
+  changed_when: false
+  no_log: true
+
+- name: Create sssd_guest service account
+  ansible.builtin.ldap_entry:
+    dn: 'cn={{ dummy_sssd_account_name }},ou=services,ou=it,dc=vagrant-dummy-ops,dc=lab'
+    objectClass:
+      - simpleSecurityObject
+      - organizationalRole
+    attributes:
+      cn: '{{ dummy_sssd_account_name }}'
+      userPassword: '{{ slappasswd_hash.stdout }}'
+      description: Service account for sssd
+    server_uri: 'ldaps://openldap.vagrant-dummy-ops.lab'
+    bind_dn: cn=admin,dc=vagrant-dummy-ops,dc=lab
+    bind_pw: '{{ root_ldap_password }}'
+  no_log: true

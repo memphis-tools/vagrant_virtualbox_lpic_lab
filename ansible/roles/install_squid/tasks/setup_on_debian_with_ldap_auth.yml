@@ -1,0 +1,45 @@
+---
+- name: Enable https and squid services, also enable it immediately if possible
+  ansible.posix.firewalld:
+    service: '{{ item }}'
+    state: enabled
+    permanent: true
+    immediate: true
+  loop:
+    - https
+    - squid
+
+- name: Set ip forwarding on in /proc and in the sysctl file and reload
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    sysctl_set: true
+    state: present
+    reload: true
+
+- name: Copy squid conf
+  ansible.builtin.copy:
+    src: 'files/ldap_auth_squid.conf'
+    dest: '/etc/squid/squid.conf'
+    owner: proxy
+    group: proxy
+    mode: '0640'
+
+- name: Touch squid ldap secret password file
+  ansible.builtin.lineinfile:
+    path: "/etc/squid/bind_user_password.txt"
+    line: "{{ dummy_squid_password }}"
+    create: yes
+    owner: proxy
+    group: proxy
+    mode: '0600'
+  no_log: true
+
+- name: Create squid db
+  ansible.builtin.shell:
+    cmd: '/usr/lib/squid/security_file_certgen -c -s /var/spool/squid/ssl_db -M 32MB'
+
+- name: Restart squid service
+  ansible.builtin.service:
+    name: squid
+    state: restarted

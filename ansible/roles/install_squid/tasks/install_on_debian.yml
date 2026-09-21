@@ -1,0 +1,14 @@
+---
+- name: Install squid and related packages
+  ansible.builtin.apt:
+    pkg:
+      - squid-common
+      - squid-openssl
+      - clamav
+      - clamav-daemon
+      - apache2-utils
+      - ldap-utils
+
+- name: Include task to setup squid with ldap auth on Debian
+  ansible.builtin.include_tasks:
+    file: setup_on_debian_with_ldap_auth.yml

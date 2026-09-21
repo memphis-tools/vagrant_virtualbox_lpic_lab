@@ -1,0 +1,14 @@
+---
+- block:
+  - name: Stop service
+    ansible.builtin.service:
+      name: 'rsyslog'
+      state: 'stopped'
+    changed_when: false
+
+  - name: Uninstall package
+    ansible.builtin.apt:
+      name: 'rsyslog'
+      state: 'absent'
+      purge: yes
+  when: '"rsyslog" in ansible_facts.packages'

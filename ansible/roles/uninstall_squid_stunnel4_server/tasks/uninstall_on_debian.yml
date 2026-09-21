@@ -1,0 +1,25 @@
+---
+- name: Check if stunnel4 installed
+  ansible.builtin.stat:
+    path: '/etc/init.d/stunnel4'
+  register: stunnel4_path
+
+- block:
+  - name: Stop stunnel4
+    ansible.builtin.service:
+      name: 'stunnel4'
+      state: stopped
+      enabled: yes
+
+  - name: Remove stunnel4
+    ansible.builtin.apt:
+      name: 'stunnel4'
+      state: absent
+      purge: yes
+
+  - name: Disable https traffic
+    ansible.posix.firewalld:
+      service: https
+      state: disabled
+      zone: public
+  when: "stunnel4_path.stat.exists == true"

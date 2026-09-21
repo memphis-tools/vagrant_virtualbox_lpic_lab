@@ -1,0 +1,7 @@
+dn: olcDatabase={2}mdb,cn=config
+changetype: modify
+replace: olcAccess
+olcAccess: {0}to * by dn="cn=nslcd_account,dc=vagrant-dummy-ops,dc=lab" read by * none
+olcAccess: {1}to attrs=userPassword by self write by anonymous auth by * none
+olcAccess: {2}to attrs=shadowLastChange by self write by * read
+olcAccess: {3}to * by * read

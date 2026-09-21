@@ -1,0 +1,16 @@
+dn: olcDatabase={1}mdb,cn=config
+changetype: modify
+replace: olcSuffix
+olcSuffix: dc=vagrant-dummy-ops,dc=lab
+-
+replace: olcRootDN
+olcRootDN: cn=admin,dc=vagrant-dummy-ops,dc=lab
+-
+replace: olcRootPW
+olcRootPW: {{ slappasswd_hash.stdout }}
+-
+replace: olcDbDirectory
+olcDbDirectory: /var/lib/ldap-vagrant-dummy-ops
+-
+replace: olcDbIndex
+olcDbIndex: objectClass eq

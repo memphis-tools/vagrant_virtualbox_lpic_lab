@@ -1,0 +1,45 @@
+server:
+    # The following line will configure unbound to perform cryptographic
+    # DNSSEC validation using the root trust anchor.
+    auto-trust-anchor-file: "/var/lib/unbound/root.key"
+    # Notice that according to man page this module should be the default
+    module-config: "validator iterator"
+    interface: 127.0.0.1
+    port: 53
+    extended-statistics: yes
+    logfile: /var/log/unbound/unbound.log
+    verbosity: 2
+    # Notice that we can trust the domain without any check
+    #domain-insecure: "vagrant-dummy-ops.lab."
+    # Disable the built‑in empty zone for our private reverse space
+    local-zone: "168.192.in-addr.arpa." nodefault
+    # Trust the KSK from our dns
+    trust-anchor: "{{ vagrant_dummy_ops_lab_KSK }}"
+    trust-anchor: "{{ reverse_vagrant_dummy_ops_lab_KSK }}"
+    forward-zone:
+        name: "vagrant-dummy-ops.lab."
+        forward-addr: 192.168.1.200
+        forward-addr: 192.168.1.201
+        forward-first: yes
+    forward-zone:
+        name: "1.168.192.in-addr.arpa."
+        forward-addr: 192.168.1.200
+        forward-addr: 192.168.1.201
+        forward-first: yes
+    forward-zone:
+    {% if ansible_hostname == "openvpn" %}
+        name: "."
+        forward-addr: 8.8.8.8
+        forward-addr: 8.8.4.4
+        forward-first: yes
+    {% elif ansible_hostname == "dns2" %}
+        name: "."
+        forward-addr: 10.0.2.3
+        forward-addr: 10.0.2.3
+        forward-first: yes
+    {% else %}
+        name: "."
+        forward-addr: 192.168.1.200
+        forward-addr: 192.168.1.201
+        forward-first: yes
+    {% endif %}

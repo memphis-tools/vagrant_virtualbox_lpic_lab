@@ -1,0 +1,17 @@
+---
+- hosts: [dns1, dns2, vsftp]
+  gather_subset: min
+  tasks:
+    - name: Ensure dns1 and vsftp /etc/resolv.conf is correct
+      ansible.builtin.lineinfile:
+        path: /etc/resolv.conf
+        regexp: '^nameserver'
+        line: 'nameserver 192.168.1.200'
+      when: 'ansible_hostname == "dns1" or ansible_hostname == "vsftp"'
+
+    - name: Ensure dns2 /etc/resolv.conf is correct
+      ansible.builtin.lineinfile:
+        path: /etc/resolv.conf
+        regexp: '^nameserver'
+        line: 'nameserver 192.168.1.201'
+      when: 'ansible_hostname == "dns2"'

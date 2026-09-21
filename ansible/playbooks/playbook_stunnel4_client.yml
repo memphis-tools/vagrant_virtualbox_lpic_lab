@@ -1,0 +1,14 @@
+---
+- hosts: all
+  become: yes
+  gather_subset:
+    - '!all'
+    - '!min'
+    - distribution
+    - distribution_version
+    - os_family
+  roles:
+    - name: uninstall_stunnel4_client
+      tags: uninstall
+    - name: install_stunnel4_client
+      tags: install

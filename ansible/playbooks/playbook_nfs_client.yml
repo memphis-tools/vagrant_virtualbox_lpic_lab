@@ -1,0 +1,9 @@
+---
+- hosts: all
+  become: yes
+  gather_facts: yes
+  roles:
+    - name: uninstall_nfs_client
+      tags: uninstall
+    - name: install_nfs_client
+      tags: install

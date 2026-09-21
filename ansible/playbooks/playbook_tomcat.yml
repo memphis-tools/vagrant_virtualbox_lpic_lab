@@ -1,0 +1,9 @@
+---
+- hosts: ['tomcat']
+  become: yes
+  gather_facts: false
+  vars_files:
+    - vars/dummy_users_secrets.yml
+  roles:
+    - name: install_tomcat
+      tags: install

@@ -1,0 +1,29 @@
+---
+- name: Build the a1b2 WAR
+  ansible.builtin.command:
+    cmd: 'runuser -u a1b2 -- mvn clean install'
+    chdir: /appli/a1b2
+
+- name: Move the WAR on Tomcat
+  ansible.builtin.copy:
+    src: /appli/a1b2/target/a1b2.war
+    dest: /opt/tomcat/webapps/
+    remote_src: yes
+    owner: tomcat
+    group: tomcat
+
+- name: Restart tomcat
+  ansible.builtin.systemd_service:
+    name: tomcat
+    state: restarted
+
+- name: Reload the application
+  ansible.builtin.uri:
+    url: https://vagrant-dummy-ops-tomcat.lab:8443/manager/text/reload?path=/a1b2
+    user: a1b2
+    password: a1b2
+  register: reload_result
+  retries: 3
+  delay: 2
+  until: reload_result.status == 200
+  ignore_errors: true

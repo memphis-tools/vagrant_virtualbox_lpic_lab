@@ -1,0 +1,102 @@
+---
+- name: Install openvpn
+  ansible.builtin.apt:
+    name: '{{ item }}'
+    state: present
+  loop:
+    - openvpn
+    - easy-rsa
+
+- name: Ensure openvpn is started
+  ansible.builtin.service:
+    name: openvpn
+    state: started
+    enabled: true
+
+- block:
+  - name: Enable IPv4 forwarding
+    ansible.posix.sysctl:
+      name: net.ipv4.ip_forward
+      value: '1'
+      state: present
+      reload: yes
+
+  - name: Template the server conf file
+    ansible.builtin.template:
+      src: 'server_openvpn.conf.j2'
+      dest: '/etc/openvpn/server/openvpn.conf'
+      mode: '0640'
+
+  - name: Copy openvpn-server certificate
+    ansible.builtin.copy:
+      src: 'files/vagrant_openvpn-server.crt'
+      dest: '/etc/ssl/localcerts/'
+      mode: '0640'
+
+  - name: Copy openvpn-server certificate key
+    ansible.builtin.copy:
+      src: 'files/vagrant_openvpn-server.key'
+      dest: '/etc/ssl/localcerts/'
+      mode: '0600'
+
+  - name: Touch a secret file to declare the openvpn server private key passphrase
+    ansible.builtin.lineinfile:
+      path: '/etc/openvpn/server.pass'
+      line: '{{ openvpn_server_passphrase }}'
+      create: yes
+      owner: root
+      group: root
+      mode: '0600'
+    no_log: true
+
+  - name: Create a symlink for the default openvpn server systemd service template
+    ansible.builtin.file:
+      src: '/etc/openvpn/server/openvpn.conf'
+      dest: '/etc/openvpn/server.conf'
+      state: link
+
+  - name: Enable a default openvpn server systemd template file
+    ansible.builtin.systemd_service:
+      name: 'openvpn@server.service'
+      state: started
+      enabled: true
+  when: 'ansible_hostname == "openvpn"'
+
+- block:
+  - name: Template the client conf file
+    ansible.builtin.template:
+      src: 'client_openvpn.conf.j2'
+      dest: '/etc/openvpn/client/openvpn.conf'
+      mode: '0640'
+
+  - name: Copy openvpn-client certificate and key
+    ansible.builtin.copy:
+      src: 'files/{{ item }}'
+      dest: '/etc/ssl/localcerts/'
+    loop:
+      - 'vagrant_openvpn-client.crt'
+      - 'vagrant_openvpn-client.key'
+
+  - name: Create a symlink for the default openvpn client systemd service template
+    ansible.builtin.file:
+      src: '/etc/openvpn/client/openvpn.conf'
+      dest: '/etc/openvpn/client.conf'
+      state: link
+
+  - name: Disable ipv6 so all traffic go throught openvpn
+    ansible.posix.sysctl:
+      name: '{{ item }}'
+      value: '1'
+      sysctl_set: true
+      state: present
+      reload: true
+    loop:
+      - 'net.ipv6.conf.all.disable_ipv6'
+      - 'net.ipv6.conf.default.disable_ipv6'
+
+  - name: Enable a default openvpn client systemd template file
+    ansible.builtin.systemd_service:
+      name: 'openvpn@client.service'
+      state: started
+      enabled: true
+  when: 'ansible_hostname == "squid"'

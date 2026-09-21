@@ -1,0 +1,6 @@
+dn: cn=config
+changetype: modify
+add: olcAuthzRegexp
+olcAuthzRegexp:
+  "TLS:CN=nslcd-client.vagrant-dummy-ops.lab,OU=DUMMY_DEV_TEAM,O=DUMMY_OPS_TEAM,L=PARIS,ST=IDF,C=FR"
+  "cn=nslcd-client,ou=services,ou=it,dc=vagrant-dummy-ops,dc=lab"

@@ -1,0 +1,11 @@
+---
+- name: Copy CA
+  ansible.builtin.copy:
+    src: 'files/vagrant_ca.crt'
+    dest: '/usr/share/pki/ca-trust-source/anchors/'
+    mode: '0644'
+  changed_when: false
+
+- name: Trust CA
+  ansible.builtin.shell:
+    cmd: 'update-ca-trust'

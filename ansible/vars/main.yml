@@ -1,0 +1,5 @@
+---
+unbound_user: root
+unbound_group: root
+unbound_log_dir: /var/log/unbound
+unbound_log_file: "{{ unbound_log_dir }}/unbound.log"

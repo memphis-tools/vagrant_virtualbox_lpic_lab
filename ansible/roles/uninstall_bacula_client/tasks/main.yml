@@ -1,0 +1,9 @@
+---
+- name: Ensure bacula packages are uninstalled and purged
+  ansible.builtin.apt:
+    name: '{{ item }}'
+    state: absent
+    purge: yes
+  loop:
+    - bacula-fd
+    - bacula-common

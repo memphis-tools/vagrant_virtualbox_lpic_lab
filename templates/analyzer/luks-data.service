@@ -1,0 +1,14 @@
+[Unit]
+Description=the service which will trigger the automount luks formated folder
+Requires=systemd-udevd.service iscsi.service iscsid.service
+After=systemd-udevd.service iscsi.service iscsid.service
+Wants=iscsi.service
+Before=apache2.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/cryptsetup luksOpen /dev/mapper/vg_mirror_san_disk-lv_mirror_san_disk1 data_encrypted --key-file=/root/.luks.key
+RemainAfterExit=True
+
+[Install]
+WantedBy=multi-user.target

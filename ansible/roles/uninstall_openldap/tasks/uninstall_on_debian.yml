@@ -1,0 +1,28 @@
+---
+- name: Remove slapd, ldap-utils, python3-ldap and purge
+  ansible.builtin.apt:
+    name: '{{ item }}'
+    state: absent
+    purge: yes
+  loop:
+    - slapd
+    - ldap-utils
+    - libnss-ldap
+    - libsasl2-modules
+    - libldap-common
+    - libsasl2-modules
+    - libsasl2-modules-gssapi-mit
+    - krb5-user
+    - nfs-common
+    - python3-ldap
+
+- name: Ensure the database files and openldap x509 keys are removed
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/ldap
+    - /var/lib/ldap
+    - /var/lib/ldap-vagrant-dummy-ops
+    - /etc/ssl/localcerts/vagrant_openldap.crt
+    - /etc/ssl/localcerts/vagrant_openldap.key

@@ -1,0 +1,23 @@
+---
+- hosts: [active:!openvpn]
+  gather_subset: min
+  tasks:
+    - name: Deactivate eth0 (default virtualbox NAT network)
+      ansible.builtin.command:
+        cmd: 'ip link set eth0 down'
+
+    - block:
+      - name: Remove default route
+        ansible.builtin.command:
+          cmd: 'ip route del default'
+        ignore_errors: true
+
+      - name: Add squid as default route
+        ansible.builtin.command:
+          cmd: 'ip route add default via 192.168.1.210'
+      when: 'ansible_hostname != "squid"'
+
+    - name: Add squid as default route
+      ansible.builtin.command:
+          cmd: 'ip route add default via 192.168.2.2 dev tun0'
+      when: 'ansible_hostname == "squid"'

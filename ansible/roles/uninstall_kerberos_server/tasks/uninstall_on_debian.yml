@@ -1,0 +1,15 @@
+---
+- name: Remove kerberos packages and purge
+  ansible.builtin.apt:
+    name: '{{ item }}'
+    state: absent
+    purge: yes
+  loop:
+    - krb5-kdc
+    - krb5-admin-server
+    - krb5-user
+
+- name: Ensure old krb5 database is removed
+  ansible.builtin.file:
+    path: '/var/lib/krb5kdc/'
+    state: absent

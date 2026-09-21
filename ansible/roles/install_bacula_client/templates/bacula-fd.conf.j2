@@ -1,0 +1,36 @@
+#
+# Default  Bacula File Daemon Configuration file
+#  For Bacula release 9.6.7 (10 December 2020) -- debian bookworm/sid
+
+# List Directors who are permitted to contact this File daemon
+Director {
+  Name = bacula-dir
+  Password = "64gXtdkinKe5mBCkPEXi99xe1GgH3py80"
+}
+
+#
+# Restricted Director, used by tray-monitor to get the
+#   status of the file daemon
+Director {
+  Name = {{ ansible_hostname }}-mon
+  Password = "7rhWvwVC49Bw3uuyc9vWDuTFactxb2iBD"
+  Monitor = yes
+}
+
+#
+# "Global" File daemon configuration specifications
+FileDaemon {
+  Name = {{ ansible_hostname }}-fd
+  FDport = 9102
+  WorkingDirectory = /var/lib/bacula
+  Pid Directory = /run/bacula
+  Maximum Concurrent Jobs = 20
+  Plugin Directory = /usr/lib/bacula
+  FDAddress = {{ ansible_bond0.ipv4.address | default(ansible_eth1.ipv4.address) }}
+}
+
+# Send all messages except skipped files back to Director
+Messages {
+  Name = Standard
+  director = bacula-dir = all, !skipped, !restored
+}

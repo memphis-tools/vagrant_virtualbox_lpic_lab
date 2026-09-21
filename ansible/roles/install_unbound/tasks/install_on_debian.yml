@@ -1,0 +1,9 @@
+---
+- name: Install unbound packages
+  ansible.builtin.apt:
+    pkg:
+    - unbound
+
+- name: Include task to setup unbound on Debian
+  ansible.builtin.include_tasks:
+    file: setup_on_debian.yml

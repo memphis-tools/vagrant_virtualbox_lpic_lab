@@ -1,0 +1,153 @@
+[NSLCD POC]
+-----------
+1] Host with nslcd and a binddn
+e.g: openldap host
+root@openldap:~# cat /etc/nslcd.conf
+uid nslcd
+gid nslcd
+uri ldaps://openldap.vagrant-dummy-ops.lab:636
+base ou=it,dc=vagrant-dummy-ops,dc=lab
+binddn cn=nslcd_guest,ou=services,ou=it,dc=vagrant-dummy-ops,dc=lab
+bindpw superStrongPassword
+ssl on
+tls_reqcert demand
+tls_cacertfile /usr/local/share/ca-certificates/vagrant_ca.crt
+pam_authz_search (&(objectClass=posixGroup)(cn=sysadmin)(memberUid=$username))
+root@openldap:~#
+
+
+
+2] Host with nslcd and SASL
+e.g: ansible host
+Notice the "sasl_authcid" and "sasl_realm" can be removed
+root@ansible:~# cat /etc/nslcd.conf
+uid nslcd
+gid nslcd
+uri ldaps://openldap.vagrant-dummy-ops.lab:636
+base ou=it,dc=vagrant-dummy-ops,dc=lab
+ssl on
+tls_reqcert demand
+#tls_reqcert allow
+tls_cacertfile /usr/local/share/ca-certificates/vagrant_ca.crt
+tls_cert /etc/ssl/localcerts/vagrant_nslcd-client.crt
+tls_key /etc/ssl/localcerts/vagrant_nslcd-client.key
+sasl_mech EXTERNAL
+sasl_authcid nslcd-client.vagrant-dummy-ops.lab
+sasl_realm VAGRANT-DUMMY-OPS.LAB
+pam_authz_search (&(objectClass=posixGroup)(cn=sysadmin)(memberUid=$username))
+
+root@ansible:~# ll /etc/ssl/localcerts/
+total 8
+-rw-r--r-- 1 nslcd nslcd 1679 Jun 12 12:47 vagrant_nslcd-client.crt
+-rw------- 1 nslcd nslcd 1704 Jun 12 12:47 vagrant_nslcd-client.key
+root@ansible:~#
+root@ansible:~# cat /etc/ldap/ldap.conf
+URI ldaps://openldap.vagrant-dummy-ops.lab:636
+TLS_CACERT /usr/local/share/ca-certificates/vagrant_ca.crt
+TLS_REQCERT demand
+#TLS_REQCERT allow
+TLS_CERT /etc/ssl/localcerts/vagrant_nslcd-client.crt
+TLS_KEY /etc/ssl/localcerts/vagrant_nslcd-client.key
+root@ansible:~#
+
+
+We run nslcd in foreground to see that the SASL worked
+authzid optional in my usecase
+authcid vs authzid
+authcid = authentication identity: "Who are you proving you are?"
+authzid = authorization identity: "As whom do you want to act?"
+
+root@ansible:~# systemctl stop nslcd
+root@ansible:~# nslcd -d
+nslcd: DEBUG: NSS_LDAP nss-pam-ldapd 0.9.12
+nslcd: DEBUG: ldap_set_option(LDAP_OPT_X_TLS_REQUIRE_CERT,demand)
+nslcd: DEBUG: ldap_set_option(LDAP_OPT_X_TLS_CACERTFILE,"/usr/local/share/ca-certificates/vagrant_ca.crt")
+nslcd: DEBUG: ldap_set_option(LDAP_OPT_X_TLS_CERTFILE,"/etc/ssl/localcerts/vagrant_nslcd-client.crt")
+nslcd: DEBUG: ldap_set_option(LDAP_OPT_X_TLS_KEYFILE,"/etc/ssl/localcerts/vagrant_nslcd-client.key")
+nslcd: DEBUG: CFG: threads 5
+nslcd: DEBUG: CFG: uid nslcd
+nslcd: DEBUG: CFG: gid 114
+nslcd: DEBUG: CFG: uri ldaps://openldap.vagrant-dummy-ops.lab:636
+nslcd: DEBUG: CFG: ldap_version 3
+nslcd: DEBUG: CFG: sasl_mech EXTERNAL
+nslcd: DEBUG: CFG: base ou=it,dc=vagrant-dummy-ops,dc=lab
+***
+
+We run a "getent passwd loulou" in an other terminal
+***
+nslcd: [8b4567] DEBUG: connection from  pid=708 uid=0 gid=0
+nslcd: [8b4567] <passwd="fifi"> DEBUG: myldap_search(base="ou=it,dc=vagrant-dummy-ops,dc=lab", filter="(&(objectClass=posixAccount)(uid=loulou))")
+nslcd: [8b4567] <passwd="fifi"> DEBUG: ldap_initialize(ldaps://openldap.vagrant-dummy-ops.lab:636)
+nslcd: [8b4567] <passwd="fifi"> DEBUG: ldap_set_rebind_proc()
+nslcd: [8b4567] <passwd="fifi"> DEBUG: ldap_set_option(LDAP_OPT_PROTOCOL_VERSION,3)
+***
+nslcd: [8b4567] <passwd="fifi"> DEBUG: ldap_set_option(LDAP_OPT_X_TLS,LDAP_OPT_X_TLS_HARD)
+nslcd: [8b4567] <passwd="fifi"> DEBUG: ldap_sasl_interactive_bind_s(NULL,"EXTERNAL") (uri="ldaps://openldap.vagrant-dummy-ops.lab:636")
+nslcd: [8b4567] <passwd="fifi"> DEBUG: do_sasl_interact(): were asked for sasl_authzid but we don't have any
+nslcd: [8b4567] <passwd="fifi"> DEBUG: ldap_result(): uid=fifi,ou=analyst,ou=it,dc=vagrant-dummy-ops,dc=lab
+nslcd: [8b4567] <passwd="fifi"> (re)loading /etc/nsswitch.conf
+nslcd: [8b4567] <passwd="fifi"> DEBUG: ldap_result(): end of results (1 total)
+
+
+
+3] We can debug
+Lets check if the openldap server  accept SASL
+root@ansible:~# sudo -u nslcd ldapsearch     -H ldaps://openldap.vagrant-dummy-ops.lab:636 -Y EXTERNAL -o TLS_CERT=/etc/ssl/localcerts/vagrant_nslcd-client.crt -o TLS_KEY=/etc/ssl/localcerts/vagrant_nslcd-client.key -b "" -s base supportedSASLMechanisms
+ sudo: pam_unix(sudo:session): session opened for user nslcd(uid=105) by ansible(uid=0)
+ sudo: pam_unix(sudo:session): session opened for user nslcd(uid=105) by ansible(uid=0)
+ sudo: pam_unix(sudo:session): session opened for user nslcd(uid=105) by ansible(uid=0)
+ sudo: pam_unix(sudo:session): session opened for user nslcd(uid=105) by ansible(uid=0)
+SASL/EXTERNAL authentication started
+SASL username: email=shijuro@dovecot.vagrant-dummy-ops.lab,cn=nslcd-client.vagrant-dummy-ops.lab,ou=DUMMY_DEV_TEAM,o=DUMMY_OPS_TEAM,st=IDF,l=PARIS,c=FR
+SASL SSF: 0
+# extended LDIF
+#
+# LDAPv3
+# base <> with scope baseObject
+# filter: (objectclass=*)
+# requesting: supportedSASLMechanisms
+#
+
+#
+dn:
+supportedSASLMechanisms: GSS-SPNEGO
+supportedSASLMechanisms: GSSAPI
+supportedSASLMechanisms: SCRAM-SHA-512
+supportedSASLMechanisms: SCRAM-SHA-384
+supportedSASLMechanisms: SCRAM-SHA-256
+supportedSASLMechanisms: SCRAM-SHA-224
+supportedSASLMechanisms: SCRAM-SHA-1
+supportedSASLMechanisms: GS2-KRB5
+supportedSASLMechanisms: GS2-IAKERB
+supportedSASLMechanisms: DIGEST-MD5
+supportedSASLMechanisms: EXTERNAL
+supportedSASLMechanisms: NTLM
+supportedSASLMechanisms: CRAM-MD5
+supportedSASLMechanisms: PLAIN
+supportedSASLMechanisms: LOGIN
+
+# search result
+search: 2
+result: 0 Success
+
+# numResponses: 2
+# numEntries: 1
+root@ansible:~#
+
+
+
+
+Le client fait il appel aux (ou possède les) bonnes lib system ?
+ansible@ansible:~$ strace -e openat,access ldapwhoami -H ldaps://openldap.vagrant-dummy-ops.lab -Y EXTERNAL 2>&1 | grep sasl
+openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libsasl2.so.2", O_RDONLY|O_CLOEXEC) = 3
+openat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/sasl2", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3
+openat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/sasl2/libanonymous.so", O_RDONLY|O_CLOEXEC) = 4
+openat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/sasl2/libntlm.so", O_RDONLY|O_CLOEXEC) = 4
+openat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/sasl2/libdigestmd5.so", O_RDONLY|O_CLOEXEC) = 4
+openat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/sasl2/libsasldb.so", O_RDONLY|O_CLOEXEC) = 4
+openat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/sasl2/libplain.so", O_RDONLY|O_CLOEXEC) = 4
+openat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/sasl2/libscram.so", O_RDONLY|O_CLOEXEC) = 4
+openat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/sasl2/liblogin.so", O_RDONLY|O_CLOEXEC) = 4
+openat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/sasl2/libcrammd5.so", O_RDONLY|O_CLOEXEC) = 4
+ldap_sasl_interactive_bind: Unknown authentication method (-6)
+ansible@ansible:~$

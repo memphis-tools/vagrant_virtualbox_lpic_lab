@@ -1,0 +1,20 @@
+---
+- name: Uninstall on Debian
+  ansible.builtin.include_tasks:
+    file: uninstall_on_debian.yml
+    apply:
+      tags:
+        - uninstall
+  tags:
+    - uninstall
+  when: ansible_distribution == 'Debian'
+
+- name: Uninstall on Rhel
+  ansible.builtin.include_tasks:
+    file: uninstall_on_rhel.yml
+    apply:
+      tags:
+        - uninstall
+  tags:
+    - uninstall
+  when: ansible_distribution == 'Rocky'

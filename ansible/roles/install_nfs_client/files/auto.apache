@@ -1,0 +1,1 @@
+/var/www/html/ -fstype=nfs4,rw,defaults,nosuid,nodev,port=2049 localhost:/mnt/apache

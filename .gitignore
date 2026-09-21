@@ -1,0 +1,7 @@
+env
+.env
+.envrc
+venv
+.venv
+.vagrant
+./ansible/.ansible.secret

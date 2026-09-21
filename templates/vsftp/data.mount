@@ -1,0 +1,15 @@
+[Unit]
+Description=Mount unit for encrypted disk share
+Requires=systemd-udevd.service
+After=systemd-udevd.service
+
+[Mount]
+What=/dev/mapper/data_encrypted
+Where=/data/
+Type=xfs
+Options=rw,defaults,nosuid,nodev
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

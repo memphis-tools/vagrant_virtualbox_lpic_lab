@@ -1,0 +1,11 @@
+---
+- hosts: all
+  become: yes
+  gather_facts: yes
+  vars_files:
+    - vars/dummy_ldap_secrets.yml
+    - vars/dummy_nslcd_secret.yml
+    - vars/dummy_users_secrets.yml
+  roles:
+    - name: install_nslcd_client
+      tags: install

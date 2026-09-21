@@ -1,0 +1,6 @@
+---
+- name: Restart bacula-fd
+  ansible.builtin.service:
+    name: bacula-fd
+    state: restarted
+    enabled: true

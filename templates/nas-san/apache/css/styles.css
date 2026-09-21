@@ -1,0 +1,101 @@
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+html, body {
+
+	font-family: 'Barlow Semi Condensed', sans-serif;
+	text-rendering: optimizeLegibility;
+	font-weight: 300;
+	size: 22px;
+}
+
+nav {
+	text-align: left;
+}
+
+nav a {
+	color: #ff793f;
+	text-decoration: none;
+}
+
+nav a:active {
+	color: #ff793f;
+	text-decoration: none;
+}
+
+nav a:hover {
+	color: #218c74;
+	border-bottom: 1px solid transparent;
+}
+
+ul li {
+	font-size: 130%;
+	display: inline;
+	padding: 0 10px;
+
+}
+
+.hero-box {
+        width: 50%;
+	color: #ff793f;
+	font-size: 110%;
+	top: 50%;
+	left: 50%;
+	position: absolute;
+	transform: translate(-50%,-50%);
+
+	padding: 10px 10px;
+	border: 2px solid #ff793f;
+	border-radius: 6px;
+	background-image: linear-gradient(rgba(0,0,0,0.7),rgba(0,0,0,0.7));
+}
+
+.hero-box p {
+	text-align: center;
+	text-transform: uppercase;
+	padding-bottom: 10px;
+
+}
+
+form {
+	font-color: #ff793f;
+	font-size: 80%;
+}
+label {
+	font-size: 120%;
+	display: inline-block;
+}
+
+input[type="text"],[type="email"] {
+	width: 100%;
+	align:center;
+	font-size: 120%;
+}
+input[type=submit] {
+	margin-top: 20px;
+	background-color: Transparent;
+	text-decoration: none;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	float: right;
+	font-size: 120%;
+	color: #ff793f;
+}
+#message {
+  width: 100%;
+}
+legend {
+
+}
+
+header {
+	background-image: linear-gradient(rgba(0,0,0,0.70),rgba(0,0,0,0.70)),url(../img/starwars-2.jpg);
+	height: 100vh;
+	background-position: center;
+	background-size: cover;
+	background-attachment: fixed;
+}

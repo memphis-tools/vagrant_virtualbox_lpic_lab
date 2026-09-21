@@ -1,0 +1,18 @@
+---
+- name: Copy krb5.conf file
+  ansible.builtin.copy:
+    src: 'files/krb5.conf'
+    dest: '/etc/krb5.conf'
+    mode: '0640'
+    owner: root
+    group: openldap
+  when: 'ansible_hostname == "openldap"'
+
+- name: Copy krb5.conf file
+  ansible.builtin.copy:
+    src: 'files/krb5.conf'
+    dest: '/etc/krb5.conf'
+    mode: '0640'
+    owner: root
+    group: root
+  when: 'ansible_hostname != "openldap"'

@@ -1,0 +1,22 @@
+---
+- name: Generate SSHA hash for dummy users password using slappasswd
+  ansible.builtin.command:
+    cmd: 'slappasswd -s "{{ dummy_squid_password }}"'
+  register: slappasswd_hash
+  changed_when: false
+  no_log: true
+
+- name: Create squid service account
+  ansible.builtin.ldap_entry:
+    dn: cn=squid,ou=services,ou=it,dc=vagrant-dummy-ops,dc=lab
+    objectClass:
+      - simpleSecurityObject
+      - organizationalRole
+    attributes:
+      cn: squid
+      userPassword: "{{ slappasswd_hash.stdout }}"
+      description: Service account to allow squid usage
+    server_uri: "ldaps://openldap.vagrant-dummy-ops.lab"
+    bind_dn: cn=admin,dc=vagrant-dummy-ops,dc=lab
+    bind_pw: "{{ root_ldap_password }}"
+  no_log: true

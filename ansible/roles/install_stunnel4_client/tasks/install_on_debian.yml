@@ -1,0 +1,39 @@
+---
+- name: Gather package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Ensure stunnel4 package is installed
+  ansible.builtin.apt:
+    name: stunnel4
+    state: present
+
+- name: Template stunnel4 conf
+  ansible.builtin.template:
+    src: 'stunnel.conf.j2'
+    dest: /etc/stunnel/stunnel.conf
+    mode: '0644'
+
+- name: Ensure the /etc/ssl/localcerts/ exists
+  ansible.builtin.file:
+    path: '/etc/ssl/localcerts/'
+    state: directory
+    mode: '0755'
+
+- name: Copy stunnel4 certificate public key
+  ansible.builtin.copy:
+    src: 'files/vagrant_stunnel4-client.crt'
+    dest: /etc/ssl/localcerts/
+    mode: '0644'
+
+- name: Copy stunnel4 certificate private key
+  ansible.builtin.copy:
+    src: 'files/vagrant_stunnel4-client.key'
+    dest: /etc/ssl/localcerts/
+    mode: '0600'
+
+- name: Enable and start stunnel4
+  ansible.builtin.service:
+    name: stunnel4
+    state: started
+    enabled: yes

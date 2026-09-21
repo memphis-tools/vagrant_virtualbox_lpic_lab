@@ -1,0 +1,10 @@
+---
+- name: Remove CA
+  ansible.builtin.file:
+    src: '/usr/share/pki/ca-trust-source/anchors/vagrant_ca.crt'
+    state: 'absent'
+  changed_when: false
+
+- name: Update Trust CA
+  ansible.builtin.shell:
+    cmd: 'update-ca-trust'

@@ -1,0 +1,44 @@
+---
+- name: Generate SSHA a default hash for dummy users password using slappasswd
+  ansible.builtin.command:
+    cmd: 'slappasswd -s "{{ dummy_password }}"'
+  register: slappasswd_hash
+  changed_when: false
+  no_log: true
+
+- name: Enable ldapi
+  ansible.builtin.lineinfile:
+    path: /etc/default/slapd
+    regex: '^SLAPD_SERVICES'
+    line: 'SLAPD_SERVICES="ldapi:/// ldap:/// ldaps:///"'
+    mode: '0644'
+
+- name: Restart slapd
+  ansible.builtin.service:
+    name: slapd
+    state: restarted
+
+- name: For each users in list, loop on task
+  ansible.builtin.include_tasks:
+    file: ldapadd_on_debian_template_file.yml
+  loop:
+    - {uid: 'john', fulluid: 'john doe', sn: 'jdoe', mail: 'jdoe@dovecot.vagrant-dummy-ops.lab', uidNumber: '10000', gidNumber: '10000', root_ou: 'sysadmin'}
+    - {uid: 'boris', fulluid: 'boris doe', sn: 'bdoe', mail: 'bdoe@dovecot.vagrant-dummy-ops.lab', uidNumber: '10001', gidNumber: '10000', root_ou: 'sysadmin'}
+    - {uid: 'donald', fulluid: 'donald duck', sn: 'dduck', mail: 'dduck@dovecot.vagrant-dummy-ops.lab', uidNumber: '20000', gidNumber: '20000', root_ou: 'developer'}
+    - {uid: 'daisy', fulluid: 'daisy doe', sn: 'dduck2', mail: 'dduck2@dovecot.vagrant-dummy-ops.lab', uidNumber: '20001', gidNumber: '20000', root_ou: 'developer'}
+    - {uid: 'loulou', fulluid: 'loulou duck', sn: 'lduck', mail: 'lduck@dovecot.vagrant-dummy-ops.lab', uidNumber: '30000', gidNumber: '30000', root_ou: 'analyst'}
+    - {uid: 'fifi', fulluid: 'fifi doe', sn: 'fduck', mail: 'fduck@dovecot.vagrant-dummy-ops.lab', uidNumber: '30001', gidNumber: '30000', root_ou: 'analyst'}
+  loop_control:
+    loop_var: user
+
+- name: Disable ldapi
+  ansible.builtin.lineinfile:
+    path: /etc/default/slapd
+    regex: '^SLAPD_SERVICES'
+    line: 'SLAPD_SERVICES="ldap:/// ldaps:///"'
+    mode: '0644'
+
+- name: Restart slapd
+  ansible.builtin.service:
+    name: slapd
+    state: restarted

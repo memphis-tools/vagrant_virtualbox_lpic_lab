@@ -1,0 +1,180 @@
+---
+- name: Copy the ansible SSH CA signed public key
+  ansible.builtin.copy:
+    src: "files/vagrant_ansible_ca.pub"
+    dest: "/etc/ssh/vagrant_ansible_ca.pub"
+    mode: "0644"
+
+- name: Create ansible user with a home directory
+  ansible.builtin.user:
+    name: ansible
+    create_home: yes
+    shell: /bin/bash
+
+- name: Ensure user home perms correct
+  ansible.builtin.file:
+    path: '/home/ansible'
+    mode: '0700'
+
+- name: Create ansible user .ssh home directory
+  ansible.builtin.file:
+    path: '/home/ansible/.ssh'
+    state: 'directory'
+    owner: ansible
+    group: ansible
+    mode: '0700'
+
+- name: Copy the ansible user ssh keypair files on ansible controller
+  ansible.builtin.copy:
+    src: 'files/{{ item }}'
+    dest: '/home/ansible/.ssh'
+    owner: ansible
+    group: ansible
+  loop:
+    - 'ansible_id_ed25519'
+    - 'ansible_id_ed25519-cert.pub'
+
+- name: Ensure correct perms on ansible user ssh private key
+  ansible.builtin.file:
+    path: "/home/ansible/.ssh/ansible_id_ed25519"
+    mode: '0600'
+
+- name: Ensure correct perms on ansible user signed ssh public key
+  ansible.builtin.file:
+    path: "/home/ansible/.ssh/ansible_id_ed25519-cert.pub"
+    mode: '0640'
+
+- name: Ensure default required folders created in ansible user home
+  ansible.builtin.file:
+    path: "/home/ansible/{{ item }}"
+    state: directory
+    owner: ansible
+    group: ansible
+    mode: '0700'
+  loop:
+    - inventory
+    - playbooks
+
+- name: Create playbooks vars directory
+  ansible.builtin.file:
+    path: '/home/ansible/playbooks/vars'
+    state: 'directory'
+    owner: ansible
+    group: ansible
+    mode: '0700'
+
+- name: Copy ansible.cfg file
+  ansible.builtin.copy:
+    src: 'files/ansible.cfg'
+    dest: '/home/ansible/'
+    owner: ansible
+    group: ansible
+    mode: '0640'
+
+- name: Copy inventory file
+  ansible.builtin.copy:
+    src: 'files/inventory.ini'
+    dest: '/home/ansible/inventory/'
+    owner: ansible
+    group: ansible
+    mode: '0600'
+
+- name: Copy vault secret files
+  ansible.builtin.copy:
+    src: 'files/{{ item }}'
+    dest: '/home/ansible/playbooks/vars/'
+    owner: ansible
+    group: ansible
+    mode: '0600'
+    decrypt: false
+  loop:
+    - dummy_ansible_secrets.yml
+    - dummy_squid_secrets.yml
+    - dummy_root_secrets.yml
+
+- name: Touch ansible.secret file needed to use encrypted vars/dummy_ansible_secrets.yml
+  ansible.builtin.lineinfile:
+    path: "/home/ansible/ansible.secret"
+    line: "{{ ansible_vault_secret }}"
+    create: yes
+    owner: ansible
+    group: ansible
+    mode: '0600'
+  no_log: true
+
+- name: Template the passphrase file used by ssh-agent to add private key
+  ansible.builtin.template:
+    src: "passphrase.sh.j2"
+    dest: "/home/ansible/passphrase.sh"
+    owner: ansible
+    group: ansible
+    mode: '0700'
+  no_log: true
+
+- name: Copy scan_hosts_keys.sh script file
+  ansible.builtin.copy:
+    src: 'files/scan_hosts_keys.sh'
+    dest: '/home/ansible/'
+    owner: ansible
+    group: ansible
+    mode: '0700'
+
+- name: Copy main.yml file
+  ansible.builtin.copy:
+    src: 'files/main.yml'
+    dest: '/home/ansible/'
+    owner: ansible
+    group: ansible
+    mode: '0640'
+
+- name: Copy dummy playbook files
+  ansible.builtin.copy:
+    src: 'files/{{ item }}'
+    dest: '/home/ansible/playbooks'
+    owner: ansible
+    group: ansible
+    mode: '0640'
+  loop:
+    - disconnect_eth0_and_set_squid_as_default_route.yml
+    - apt_update.yml
+    - update_root_password.yml
+    - update_tty_access_rules.yml
+    - ensure_dns1_and_dns2_and_vsftp_default_resolver_correct.yml
+    - ensure_vagrant_not_mount.yml
+
+- name: Copy the ansible SSH CA signed public key
+  ansible.builtin.copy:
+    src: "files/vagrant_ansible_ca.pub"
+    dest: "/etc/ssh/vagrant_ansible_ca.pub"
+    mode: "0644"
+
+- name: Ensure TrustedUserCAKeys set in sshd_config
+  ansible.builtin.lineinfile:
+    path: '/etc/ssh/sshd_config'
+    regexp: '^TrustedUserCAKeys'
+    line: 'TrustedUserCAKeys /etc/ssh/vagrant_ansible_ca.pub'
+
+- name: Ensure PubkeyAuthentication set to yes in sshd_config
+  ansible.builtin.lineinfile:
+    path: '/etc/ssh/sshd_config'
+    regexp: '^#PubkeyAuthentication yes'
+    line: 'PubkeyAuthentication yes'
+
+- name: Ensure PasswordAuthentication set to no in sshd_config
+  ansible.builtin.lineinfile:
+    path: '/etc/ssh/sshd_config'
+    regexp: '^PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+
+- name: Ensure sshd is restarted
+  ansible.builtin.service:
+    name: sshd
+    state: restarted
+
+- name: Allow the ansible user to run any commands as root
+  community.general.sudoers:
+    name: ansible-do-as-root
+    state: present
+    user: ansible
+    runas: root
+    commands: ALL

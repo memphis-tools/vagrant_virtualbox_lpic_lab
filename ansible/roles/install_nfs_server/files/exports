@@ -1,0 +1,3 @@
+/mnt/apache 127.0.0.2(rw,sync,no_subtree_check,insecure,anonuid=1200,anongid=2500)
+/mnt/tomcat 127.0.0.3(rw,sync,no_subtree_check,insecure,anonuid=1201,anongid=2501)
+/mnt/kerberos 127.0.0.4(rw,sync,no_subtree_check,insecure,anonuid=1202,anongid=2502)

@@ -1,0 +1,15 @@
+---
+- hosts: all
+  become: yes
+  gather_subset:
+    - '!all'
+    - '!min'
+    - distribution
+    - distribution_version
+    - os_family
+    - platform
+  roles:
+    - name: uninstall_sssd_client
+      tags: uninstall
+    - name: install_sssd_client
+      tags: install

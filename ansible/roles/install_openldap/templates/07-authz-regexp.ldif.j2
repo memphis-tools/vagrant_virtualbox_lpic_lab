@@ -1,0 +1,4 @@
+dn: cn=config
+changetype: modify
+add: olcAuthzRegexp
+olcAuthzRegexp: {0}"^/C=FR/L=PARIS/ST=IDF/O=DUMMY_OPS_TEAM/OU=DUMMY_DEV_TEAM/CN=vagrant_nslcd-client.vagrant-dummy-ops.lab$" "ldap:///cn=nslcd-client.vagrant-dummy-ops.lab,ou=services,ou=it,dc=vagrant-dummy-ops,dc=lab"

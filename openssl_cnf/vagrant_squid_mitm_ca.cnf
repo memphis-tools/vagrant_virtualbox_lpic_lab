@@ -1,0 +1,18 @@
+[req]
+distinguished_name = req_distinguished_name
+prompt = no
+
+[req_distinguished_name]
+C = FR
+L = PARIS
+ST = IDF
+O = DUMMY_OPS_TEAM
+OU = DUMMY_DEV_TEAM
+CN = squid-mitm-ca.vagrant-dummy-ops.lab
+emailAddress = shijuro@dovecot.vagrant-dummy-ops.lab
+
+[v3_ca]
+basicConstraints = critical, CA:true, pathlen:0
+keyUsage = critical, keyCertSign, cRLSign
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer

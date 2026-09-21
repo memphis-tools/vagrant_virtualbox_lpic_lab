@@ -1,0 +1,37 @@
+To make the lab "realistic", we shutdown eth0 interfaces on all hosts (but openvpn). We update root password, and allow only root user is allowed to connect to the PTY (VirtualBox console).
+
+Connect to the ansible host.
+
+  $ ssh -i .vagrant/machines/ansible/virtualbox/private_key vagrant@192.168.1.208
+
+Start a ssh-agent, then udpate the known hosts fingerprints and perform a ping task.
+
+  ansible@ansible:~$ ./scan_hosts_keys.sh
+
+  ansible@ansible:~$ ansible active -m ping -o -f 20
+
+Then execute somme more dummy post-configuration steps.
+
+  ansible@ansible:~$ ansible-playbook main.yml --vault-password-file=./ansible.secret
+
+Only run this when vagrant stack have been stopped and you restart it ($ vagrant up)
+
+  ansible@ansible:~$ ansible active -m shell -a 'sudo systemctl restart luks-data.service' -o -f 20
+
+Ensure hosts can reach the "analyzer" host on port 514 (rsyslog), and send dummy error messages.
+
+  ansible@ansible:~$ ansible active -m shell -a 'nc 192.168.1.209 514 -vz' -o -f 20
+
+  ansible@ansible:~$ ansible active -m shell -a "logger -p user.err 'Log any dummy error message syslog sir'" -o -f 20
+
+Inspect syslog error messages.
+
+  ansible@ansible:~$ curl -I https://analyzer.vagrant-dummy-ops.lab -u admin:Lem@npie94
+
+Check that hosts can reach internet throught the squid proxy.
+
+  ansible@ansible:~$ ansible squid -m shell -a 'sudo apt update' -o -f 20
+
+  ansible@ansible:~$ ansible squid -m shell -a 'ping -c 3 8.8.8.8' -o -f 20
+
+  ansible@ansible:~$ ansible active:\!openvpn -m shell -a 'sudo apt-get -o Acquire::https::Proxy="https://squid:chocol@tepie94@squid.vagrant-dummy-ops.lab:443/" update' -o -f 2

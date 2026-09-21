@@ -1,0 +1,42 @@
+[BASTION poc]
+-------------
+
+root@sanjurolab:~# cat /etc/krb5.conf
+[libdefaults]
+  default_realm = VAGRANT-DUMMY-OPS.LAB
+  dns_lookup_realm = false
+  dns_lookup_kdc = false
+  rdns = false
+  ticket_lifetime = 24h
+  forwardable = true
+
+[realms]
+  VAGRANT-DUMMY-OPS.LAB = {
+    kdc = kdc.vagrant-dummy-ops.lab
+    admin_server = kdc.vagrant-dummy-ops.lab
+  }
+
+[domain_realm]
+  .vagrant-dummy-ops.lab = VAGRANT-DUMMY-OPS.LAB
+  vagrant-dummy-ops.lab = VAGRANT-DUMMY-OPS.LAB
+
+
+sanjuro@sanjurolab:~/Desktop/vagrant_lpic_exercices$ kinit loulou@VAGRANT-DUMMY-OPS.LAB
+Password for loulou@VAGRANT-DUMMY-OPS.LAB:
+sanjuro@sanjurolab:~/Desktop/vagrant_lpic_exercices$ klist
+Ticket cache: FILE:/tmp/krb5cc_1000
+Default principal: loulou@VAGRANT-DUMMY-OPS.LAB
+
+Valid starting       Expires              Service principal
+09/12/2026 16:15:34  09/13/2026 02:15:34  krbtgt/VAGRANT-DUMMY-OPS.LAB@VAGRANT-DUMMY-OPS.LAB
+	renew until 09/13/2026 16:15:31
+sanjuro@sanjurolab:~/Desktop/vagrant_lpic_exercices$ ssh loulou@bastion.vagrant-dummy-ops.lab
+Linux bastion 6.1.0-53-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.187-1 (2026-09-07) x86_64
+
+WELCOME BACK
+Users will have to connect to the bastion, then create themselves a ssh keypair.
+A root cron job sign any '/home/***/.ssh/id_ed25519.pub' found, every minutes.
+Then users will be able to connect on other virtual machines using ssh.
+
+Last login: Sat Sep 12 15:00:59 2026 from 192.168.1.25
+loulou@bastion:~$

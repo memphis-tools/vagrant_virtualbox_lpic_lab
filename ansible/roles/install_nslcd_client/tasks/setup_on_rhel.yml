@@ -1,0 +1,25 @@
+---
+- name: Template nslcd configuration
+  ansible.builtin.template:
+    src: 'nslcd.conf.j2'
+    dest: '/etc/nslcd.conf'
+    owner: 'nslcd'
+    group: 'nslcd'
+    mode: '0600'
+
+- name: Copy nsswitch configuration
+  ansible.builtin.copy:
+    src: 'files/nsswitch.conf'
+    dest: '/etc/nsswitch.conf'
+    mode: '0644'
+
+- name: Enable automatic home directory creation via pam_mkhomedir
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/common-session
+    line: "session required pam_mkhomedir.so skel=/etc/skel/ umask=0077"
+    state: present
+
+- name: Restart nslcd
+  ansible.builtin.service:
+    name: nslcd
+    state: restarted

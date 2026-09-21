@@ -1,0 +1,43 @@
+[LVM poc]
+---------
+
+root@analyzer:~# lvs
+  LV                 VG                 Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv_mirror_san_disk vg_mirror_san_disk rwi-aor--- 900.00m                                    100.00
+root@analyzer:~# lvs -o lv_name,vg_name,segtype
+  LV                 VG                 Type
+  lv_mirror_san_disk vg_mirror_san_disk raid1
+root@analyzer:~# vgs
+  VG                 #PV #LV #SN Attr   VSize  VFree
+  vg_mirror_san_disk   2   1   0 wz--n- <1.94g 176.00m
+root@analyzer:~# pvs
+  PV                          VG                 Fmt  Attr PSize   PFree
+  /dev/mapper/san_disk_salle1 vg_mirror_san_disk lvm2 a--  992.00m 88.00m
+  /dev/mapper/san_disk_salle2 vg_mirror_san_disk lvm2 a--  992.00m 88.00m
+root@analyzer:~# lvconvert -m0 vg_mirror_san_disk/lv_mirror_san_disk
+Are you sure you want to convert raid1 LV vg_mirror_san_disk/lv_mirror_san_disk to type linear losing all resilience? [y/n]: y
+  Logical volume vg_mirror_san_disk/lv_mirror_san_disk successfully converted.
+root@analyzer:~# lvs -a -o +devices
+  LV                 VG                 Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert Devices
+  lv_mirror_san_disk vg_mirror_san_disk -wi-ao---- 900.00m                                                     /dev/mapper/san_disk_salle1(1)
+root@analyzer:~# vgs
+  VG                 #PV #LV #SN Attr   VSize  VFree
+  vg_mirror_san_disk   2   1   0 wz--n- <1.94g <1.06g
+root@analyzer:~# lvconvert -m1 vg_mirror_san_disk/lv_mirror_san_disk /dev/mapper/san_disk_salle2
+Are you sure you want to convert linear LV vg_mirror_san_disk/lv_mirror_san_disk to raid1 with 2 images enhancing resilience? [y/n]: y
+  Logical volume vg_mirror_san_disk/lv_mirror_san_disk successfully converted.
+root@analyzer:~# lvs -a -o +devices,copy_percent
+  LV                            VG                 Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert Devices                                                       Cpy%Sync
+  lv_mirror_san_disk            vg_mirror_san_disk rwi-aor--- 900.00m                                    53.51            lv_mirror_san_disk_rimage_0(0),lv_mirror_san_disk_rimage_1(0) 53.51
+  [lv_mirror_san_disk_rimage_0] vg_mirror_san_disk iwi-aor--- 900.00m                                                     /dev/mapper/san_disk_salle1(1)
+  [lv_mirror_san_disk_rimage_1] vg_mirror_san_disk Iwi-aor--- 900.00m                                                     /dev/mapper/san_disk_salle2(1)
+  [lv_mirror_san_disk_rmeta_0]  vg_mirror_san_disk ewi-aor---   4.00m                                                     /dev/mapper/san_disk_salle1(0)
+  [lv_mirror_san_disk_rmeta_1]  vg_mirror_san_disk ewi-aor---   4.00m                                                     /dev/mapper/san_disk_salle2(0)
+root@analyzer:~# lvs -a -o +devices
+  LV                            VG                 Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert Devices
+  lv_mirror_san_disk            vg_mirror_san_disk rwi-aor--- 900.00m                                    100.00           lv_mirror_san_disk_rimage_0(0),lv_mirror_san_disk_rimage_1(0)
+  [lv_mirror_san_disk_rimage_0] vg_mirror_san_disk iwi-aor--- 900.00m                                                     /dev/mapper/san_disk_salle1(1)
+  [lv_mirror_san_disk_rimage_1] vg_mirror_san_disk iwi-aor--- 900.00m                                                     /dev/mapper/san_disk_salle2(1)
+  [lv_mirror_san_disk_rmeta_0]  vg_mirror_san_disk ewi-aor---   4.00m                                                     /dev/mapper/san_disk_salle1(0)
+  [lv_mirror_san_disk_rmeta_1]  vg_mirror_san_disk ewi-aor---   4.00m                                                     /dev/mapper/san_disk_salle2(0)
+root@analyzer:~#

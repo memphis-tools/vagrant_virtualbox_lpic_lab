@@ -1,0 +1,11 @@
+---
+- hosts: all
+  become: yes
+  gather_subset: min
+  vars_files:
+    - vars/main.yml
+  roles:
+    - name: uninstall_unbound
+      tags: uninstall
+    - name: install_unbound
+      tags: install

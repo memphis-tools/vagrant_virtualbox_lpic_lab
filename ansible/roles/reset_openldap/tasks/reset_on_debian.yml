@@ -1,0 +1,66 @@
+---
+- name: Enable ldapi
+  ansible.builtin.lineinfile:
+    path: /etc/default/slapd
+    regex: '^SLAPD_SERVICES'
+    line: 'SLAPD_SERVICES="ldapi:/// ldap:/// ldaps:///"'
+    mode: '0644'
+
+- name: Restart slapd
+  ansible.builtin.service:
+    name: slapd
+    state: restarted
+
+# - name: Configure OpenLDAP database
+#   community.general.ldap_attrs:
+#     dn: olcDatabase={1}mdb,cn=config
+#     attributes:
+#       olcSuffix: "dc=nodomain"
+#       olcRootDN: "cn=admin,cn=config,dc=nodomain"
+#       olcRootPW: ""
+#       olcDbDirectory: /var/lib/ldap
+#       olcDbIndex: "objectClass eq"
+#     state: exact
+#     server_uri: ldapi:///
+#     sasl_class: external
+
+- name: Check if our custom database exists
+  ansible.builtin.stat:
+    path: '/etc/ldap/slapd.d/cn=config/olcDatabase={2}mdb.ldif'
+  register: mdb_file
+
+- name: Remove database configuration
+  ansible.builtin.command:
+    cmd: 'ldapdelete -Y EXTERNAL -H ldapi:/// -r "olcDatabase={2}mdb,cn=config"'
+  when: mdb_file.stat.exists
+
+- name: Remove old database files
+  ansible.builtin.file:
+    path: /var/lib/ldap-vagrant-dummy-ops/*
+    state: absent
+
+- name: Stop slapd
+  ansible.builtin.service:
+    name: slapd
+    state: stopped
+
+- name: Remove custom config
+  ansible.builtin.file:
+    path: '/etc/ldap/ldif/{{ item }}'
+    state: absent
+  loop:
+    - '01-add_database.ldif.j2'
+    - '02-add_root_domain_and_admin.ldif.j2'
+    - '03-add_base_structure.ldif.j2'
+    - '04-add_acl_nslcd.ldif.j2'
+    - '05-modify_tls.ldif.j2'
+
+- name: Remove ldap client conf
+  ansible.builtin.file:
+    path: '/etc/ldap/ldap.conf'
+    state: absent
+
+- name: Restart slapd
+  ansible.builtin.service:
+    name: slapd
+    state: started

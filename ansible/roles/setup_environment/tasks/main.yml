@@ -1,0 +1,53 @@
+# Root .bashrc
+- name: Enable commented aliases in root .bashrc
+  ansible.builtin.replace:
+    path: /root/.bashrc
+    regexp: '^# alias'
+    replace: 'alias'
+
+- name: Configure root bash history
+  ansible.builtin.lineinfile:
+    path: /root/.bashrc
+    regexp: '^{{ item.key }}='
+    line: '{{ item.key }}={{ item.value }}'
+    create: true
+  loop:
+    - { key: 'HISTCONTROL', value: 'ignoreboth:ignoredups' }
+    - { key: 'HISTSIZE', value: '10000' }
+    - { key: 'HISTFILESIZE', value: '20000' }
+    - { key: 'HISTTIMEFORMAT', value: '"%F %T "' }
+
+# /etc/skel/.bashrc
+- name: Enable commented aliases in skel .bashrc
+  ansible.builtin.replace:
+    path: /etc/skel/.bashrc
+    regexp: '^#alias'
+    replace: 'alias'
+
+- name: Remove existing history settings from skel .bashrc
+  ansible.builtin.lineinfile:
+    path: /etc/skel/.bashrc
+    regexp: '^{{ item }}='
+    state: absent
+  loop:
+    - HISTCONTROL
+    - HISTSIZE
+    - HISTFILESIZE
+    - HISTTIMEFORMAT
+
+- name: Configure skel bash history
+  ansible.builtin.lineinfile:
+    path: /etc/skel/.bashrc
+    regexp: '^{{ item.key }}='
+    line: '{{ item.key }}={{ item.value }}'
+    create: true
+  loop:
+    - { key: 'HISTCONTROL', value: 'ignoreboth:ignoredups' }
+    - { key: 'HISTSIZE', value: '10000' }
+    - { key: 'HISTFILESIZE', value: '20000' }
+    - { key: 'HISTTIMEFORMAT', value: '"%F %T "' }
+
+# Timezone
+- name: Set timezone to Europe/Paris
+  community.general.timezone:
+    name: Europe/Paris

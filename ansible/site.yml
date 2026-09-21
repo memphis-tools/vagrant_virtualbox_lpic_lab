@@ -1,0 +1,156 @@
+---
+- hosts: common
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+  roles:
+    - setup_environment
+    - install_utilities
+    - trust_ca
+    - install_postfix
+    - install_ansible_user
+    - install_rsyslog_client
+    - install_bacula_client
+
+- hosts: nslcd_client
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+    - vars/dummy_ldap_secrets.yml
+    - vars/dummy_nslcd_secret.yml
+    - vars/dummy_users_secrets.yml
+  roles:
+    - install_nslcd_client
+
+- hosts: nslcd_guest
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+    - vars/dummy_nslcd_secret.yml
+  roles:
+    - install_nslcd_guest
+
+- hosts: stunnel4_client
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+  roles:
+    - install_stunnel4_client
+
+- hosts: unbound_client
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+  roles:
+    - install_unbound
+
+- hosts: sssd_client
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+  roles:
+    - install_sssd_client
+
+- hosts: sssd_guest
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+    - vars/dummy_squid_secrets.yml
+    - vars/dummy_sssd_secrets.yml
+  roles:
+    - install_sssd_guest
+
+- hosts: ansible
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+    - vars/dummy_ansible_secrets.yml
+  roles:
+    - install_ansible_controller
+
+- hosts: apache
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+  roles:
+    - install_nfs_client
+
+- hosts: dovecot
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+    - vars/dummy_users_secrets.yml
+  roles:
+    - add_dovecot_dummy_users
+
+- hosts: kdc
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+    - vars/dummy_kdc_secrets.yml
+    - vars/dummy_users_secrets.yml
+  roles:
+    - install_kerberos_server
+
+- hosts: nas-san
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+  roles:
+    - install_nfs_server
+
+- hosts: openldap
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+    - vars/dummy_ldap_secrets.yml
+    - vars/dummy_nslcd_secret.yml
+    - vars/dummy_users_secrets.yml
+    - vars/dummy_squid_secrets.yml
+    - vars/dummy_sssd_secrets.yml
+  roles:
+    - install_openldap
+    - install_nslcd_guest
+    - ldapadd_dummy_users
+
+- hosts: bastion
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+    - vars/dummy_ansible_secrets.yml
+  roles:
+    - install_bastion_pubkey_signer
+
+- hosts: openvpn
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+    - vars/dummy_openvpn_server_secrets.yml
+  roles:
+    - install_openvpn
+
+- hosts: squid
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+    - vars/dummy_squid_secrets.yml
+  roles:
+    - install_openvpn
+    - install_squid
+    - install_squid_stunnel4_server

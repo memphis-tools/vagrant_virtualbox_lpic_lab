@@ -1,0 +1,45 @@
+[domain/vagrant-dummy-ops.lab]
+enumerate = true
+autofs_provider = ldap
+chpass_provider = ldap
+cache_credentials = true
+# debug_level 9 is very detailed
+debug_level = 1
+id_provider = ldap
+auth_provider = ldap
+access_provider = ldap
+ldap_access_order = filter
+ldap_group_member = member
+ldap_access_filter = (&(objectClass=inetOrgPerson)(|(gidNumber=10000)(gidNumber=20000)(gidNumber=30000)))
+#ldap_access_filter = (|(memberOf=cn=sysadmin,ou=it,dc=vagrant-dummy-ops,dc=lab)(memberOf=cn=developer,ou=it,dc=vagrant-dummy-ops,dc=lab))
+ldap_uri = ldaps://openldap.vagrant-dummy-ops.lab
+ldap_search_base = ou=it,dc=vagrant-dummy-ops,dc=lab
+# We use ldaps, we do not have to starttls (for port 389)
+ldap_id_use_start_tls = False
+
+ldap_tls_cacert = /usr/local/share/ca-certificates/vagrant_ca.crt
+ldap_tls_cipher_suite = HIGH
+ldap_default_bind_dn = cn={{ dummy_sssd_account_name }},ou=services,ou=it,dc=vagrant-dummy-ops,dc=lab
+ldap_default_authtok = {{ dummy_sssd_password }}
+# Should we trust ldap
+ldap_tls_reqcert = demand
+#ldap_tls_reqcert = allow
+#ldap_tls_reqcert = never
+# This disables TLS 1.3 and forces the use of TLS 1.2, which is more widely supported by LDAP servers
+ldap_tls_cipher_suite = NORMAL:!VERS-TLS1.3
+
+[sssd]
+services = nss, pam, sudo, ssh, autofs
+debug_level = 9
+domains = vagrant-dummy-ops.lab
+
+[pam]
+
+[nss]
+homedir_substring = /home
+
+[sudo]
+
+[autofs]
+
+[ssh]

@@ -1,0 +1,17 @@
+---
+- hosts: all
+  become: yes
+  gather_subset:
+    - '!all'
+    - '!min'
+    - distribution
+    - distribution_version
+    - os_family
+  vars_files:
+    - vars/dummy_squid_secrets.yml
+    - vars/dummy_sssd_secrets.yml
+  roles:
+    - name: uninstall_sssd_guest
+      tags: uninstall
+    - name: install_sssd_guest
+      tags: install

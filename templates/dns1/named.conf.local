@@ -1,0 +1,21 @@
+zone "vagrant-dummy-ops.lab" {
+  type master;
+  file "/etc/bind/db.vagrant-dummy-ops.lab.signed";
+  allow-transfer { key "transfer"; };
+  also-notify { 192.168.1.201; };
+  //dnssec-policy "default";
+  inline-signing yes;
+  key-directory "/etc/bind/keys";
+  auto-dnssec maintain;
+};
+
+zone "1.168.192.in-addr.arpa" {
+  type master;
+  file "/etc/bind/db.1.168.192.in-addr.arpa.signed";
+  allow-transfer { key "transfer"; };
+  also-notify { 192.168.1.201; };
+  //dnssec-policy "default";
+  inline-signing yes;
+  key-directory "/etc/bind/keys";
+  auto-dnssec maintain;
+};

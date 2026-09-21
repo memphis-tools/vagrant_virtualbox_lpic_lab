@@ -1,0 +1,9 @@
+---
+- name: Ensure nfs-common and stunnel4 packages are uninstalled and purged
+  ansible.builtin.apt:
+    name: '{{ item }}'
+    state: absent
+    purge: yes
+  loop:
+    - nfs-common
+    - stunnel4
