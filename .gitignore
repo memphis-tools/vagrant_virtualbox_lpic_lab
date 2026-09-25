@@ -4,4 +4,4 @@ env
 venv
 .venv
 .vagrant
-./ansible/.ansible.secret
+*.ansible.secret

@@ -12,18 +12,19 @@ source .env
 echo -e "$GREEN[+] File .env sourced $RESET"
 
 echo -e "$CYAN[+] Trying to destroy vagrant VM's $RESET"
-vagrant destroy -f
+#vagrant destroy -f
 echo -e "$CYAN[+] Vagrant VM's destroyed $RESET"
 
 echo -e "$CYAN[+] Trying to remove any .crt .key .pem .pub, files $RESET"
-rm -f ./certs_and_stores/*
+rm -f ./ephemeral-keys/*
 find . -iname '*.crt' -exec rm -f {} \;
 find . -iname '*.key' -exec rm -f {} \;
 find . -iname '*.pem' -exec rm -f {} \;
 find . -iname '*.pub' -exec rm -f {} \;
+find . -iname '*.p12' -exec rm -f {} \;
 find . -iname '*.keystore' -exec rm -f {} \;
 find . -iname '*.truststore' -exec rm -f {} \;
-echo -e "$GREEN[+] ./certs_and_stores/* files removed $RESET"
+echo -e "$GREEN[+] ./ephemeral-keys/* files removed $RESET"
 
 echo -e "$CYAN[+] Trying to remove any .vagrant/ folder $RESET"
 rm -rf .vagrant/
